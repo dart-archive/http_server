@@ -2,7 +2,7 @@ name: http_server
 version: 0.9.5+1
 author: Dart Team <misc@dartlang.org>
 description: Library of HTTP server classes.
-homepage: http://www.dartlang.org
+homepage: https://www.github.com/dart-lang/http_server
 environment:
   sdk: '>=1.0.0 <2.0.0'
 dependencies:
