@@ -13,6 +13,9 @@ import 'package:http_server/http_server.dart';
 
 import 'http_mock.dart';
 
+SecurityContext serverContext;
+SecurityContext clientContext;
+
 /**
  *  Used to flag a given test case as being a mock or not.
  */
@@ -85,7 +88,12 @@ Future<int> getStatusCode(int port,
                            int to}) {
   var uri = _getUri(port, path, secure: secure, rawPath: rawPath);
 
-  var client = new HttpClient();
+  var client;
+  if (secure) {
+    client = new HttpClient(context: clientContext);
+  } else {
+    client = new HttpClient();
+  }
   return client.getUrl(uri)
       .then((request) {
         if (!followRedirects) request.followRedirects = false;
@@ -294,7 +302,13 @@ const CERTIFICATE = "localhost_cert";
 
 
 void setupSecure() {
-  String certificateDatabase = Platform.script.resolve('pkcert').toFilePath();
-  SecureSocket.initialize(database: certificateDatabase,
-                          password: 'dartdart');
+  String localFile(path) => Platform.script.resolve(path).toFilePath();
+
+  serverContext = new SecurityContext()
+    ..useCertificateChain(localFile('certificates/server_chain.pem'))
+    ..usePrivateKey(localFile('certificates/server_key.pem'),
+                    password: 'dartdart');
+
+  clientContext = new SecurityContext()
+    ..setTrustedCertificates(file: localFile('certificates/trusted_certs.pem'));
 }

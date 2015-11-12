@@ -66,7 +66,7 @@ void main() {
   test('multiple-source-https', () {
     expect(Future.wait([
         HttpServer.bind('localhost', 0),
-        HttpServer.bindSecure('localhost', 0, certificateName: CERTIFICATE)])
+        HttpServer.bindSecure('localhost', 0, serverContext)])
         .then((servers) {
       var virHost = new VirtualHost();
       virHost.addSource(servers[0]);
