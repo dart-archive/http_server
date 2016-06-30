@@ -310,5 +310,5 @@ void setupSecure() {
                     password: 'dartdart');
 
   clientContext = new SecurityContext()
-    ..setTrustedCertificates(file: localFile('certificates/trusted_certs.pem'));
+    ..setTrustedCertificates(localFile('certificates/trusted_certs.pem'));
 }
