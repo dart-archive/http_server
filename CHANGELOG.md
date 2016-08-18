@@ -1,3 +1,7 @@
+# 0.9.6
+
+* Updated the secure networking code to the SDKs version 1.15 SecurityContext api
+
 # 0.9.5+1
 
 * Updated the layout of package contents.
