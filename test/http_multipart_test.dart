@@ -49,8 +49,9 @@ void postDataTest(List<int> message,
                   String contentType,
                   String boundary,
                   List<FormField> expectedFields,
-                  {defaultEncoding: LATIN1}) {
-  HttpServer.bind("127.0.0.1", 0).then((server) {
+                  {defaultEncoding: LATIN1}) async {
+  var addr = (await InternetAddress.lookup("localhost"))[0];
+  HttpServer.bind(addr, 0).then((server) {
     server.listen((request) {
       String boundary = request.headers.contentType.parameters['boundary'];
       request
@@ -86,7 +87,7 @@ void postDataTest(List<int> message,
           });
     });
     var client = new HttpClient();
-    client.post('127.0.0.1', server.port, '/')
+    client.post('localhost', server.port, '/')
         .then((request) {
           request.headers.set('content-type',
                               'multipart/form-data; boundary=$boundary');

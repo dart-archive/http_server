@@ -14,7 +14,7 @@ void testHttpClientResponseBody() {
             dynamic expectedBody,
             String type,
             [bool shouldFail = false]) {
-    HttpServer.bind("127.0.0.1", 0).then((server) {
+    HttpServer.bind("localhost", 0).then((server) {
       server.listen((request) {
         request.listen(
             (_) {},
@@ -27,7 +27,7 @@ void testHttpClientResponseBody() {
       });
 
       var client = new HttpClient();
-      client.get("127.0.0.1", server.port, "/")
+      client.get("localhost", server.port, "/")
           .then((request) => request.close())
           .then(HttpBodyHandler.processResponse)
           .then((body) {
@@ -87,7 +87,7 @@ void testHttpServerRequestBody() {
             String type,
             {bool shouldFail: false,
              Encoding defaultEncoding: UTF8}) {
-    HttpServer.bind("127.0.0.1", 0).then((server) {
+    HttpServer.bind("localhost", 0).then((server) {
       server.transform(new HttpBodyHandler(defaultEncoding: defaultEncoding))
           .listen((body) {
             if (shouldFail) return;
@@ -143,7 +143,7 @@ void testHttpServerRequestBody() {
           });
 
       var client = new HttpClient();
-      client.post("127.0.0.1", server.port, "/")
+      client.post("localhost", server.port, "/")
           .then((request) {
             if (mimeType != null) {
               request.headers.contentType =
