@@ -37,16 +37,19 @@ class _HttpBodyHandlerTransformerSink implements EventSink<HttpRequest> {
 
   void add(HttpRequest request) {
     _pending++;
-    HttpBodyHandlerImpl.processRequest(request, _defaultEncoding)
+    HttpBodyHandlerImpl
+        .processRequest(request, _defaultEncoding)
         .then(_outSink.add, onError: _outSink.addError)
         .whenComplete(() {
-          _pending--;
-          if (_closed && _pending == 0) _outSink.close();
-        });
+      _pending--;
+      if (_closed && _pending == 0) _outSink.close();
+    });
   }
+
   void addError(Object error, [StackTrace stackTrace]) {
     _outSink.addError(error, stackTrace);
   }
+
   void close() {
     _closed = true;
     if (_pending == 0) _outSink.close();
@@ -55,28 +58,24 @@ class _HttpBodyHandlerTransformerSink implements EventSink<HttpRequest> {
 
 class HttpBodyHandlerImpl {
   static Future<HttpRequestBody> processRequest(
-      HttpRequest request,
-      Encoding defaultEncoding) {
+      HttpRequest request, Encoding defaultEncoding) {
     return process(request, request.headers, defaultEncoding)
-        .then((body) => new _HttpRequestBody(request, body),
-              onError: (error) {
-                // Try to send BAD_REQUEST response.
-                request.response.statusCode = HttpStatus.BAD_REQUEST;
-                request.response.close();
-                throw error;
-              });
+        .then((body) => new _HttpRequestBody(request, body), onError: (error) {
+      // Try to send BAD_REQUEST response.
+      request.response.statusCode = HttpStatus.BAD_REQUEST;
+      request.response.close();
+      throw error;
+    });
   }
 
   static Future<HttpClientResponseBody> processResponse(
-      HttpClientResponse response,
-      Encoding defaultEncoding) {
+      HttpClientResponse response, Encoding defaultEncoding) {
     return process(response, response.headers, defaultEncoding)
         .then((body) => new _HttpClientResponseBody(response, body));
   }
 
-  static Future<HttpBody> process(Stream<List<int>> stream,
-                                  HttpHeaders headers,
-                                  Encoding defaultEncoding) {
+  static Future<HttpBody> process(
+      Stream<List<int>> stream, HttpHeaders headers, Encoding defaultEncoding) {
     ContentType contentType = headers.contentType;
 
     Future<HttpBody> asBinary() {
@@ -98,10 +97,10 @@ class HttpBodyHandlerImpl {
 
     Future<HttpBody> asFormData() {
       return stream
-          .transform(new MimeMultipartTransformer(
-                contentType.parameters['boundary']))
-          .map((part) => HttpMultipartFormData.parse(
-                part, defaultEncoding: defaultEncoding))
+          .transform(
+              new MimeMultipartTransformer(contentType.parameters['boundary']))
+          .map((part) => HttpMultipartFormData.parse(part,
+              defaultEncoding: defaultEncoding))
           .map((multipart) {
             var future;
             if (multipart.isText) {
@@ -117,9 +116,8 @@ class HttpBodyHandlerImpl {
               var filename =
                   multipart.contentDisposition.parameters['filename'];
               if (filename != null) {
-                data = new _HttpBodyFileUpload(multipart.contentType,
-                                               filename,
-                                               data);
+                data = new _HttpBodyFileUpload(
+                    multipart.contentType, filename, data);
               }
               return [multipart.contentDisposition.parameters['name'], data];
             });
@@ -129,7 +127,7 @@ class HttpBodyHandlerImpl {
           .then((parts) {
             Map<String, dynamic> map = new Map<String, dynamic>();
             for (var part in parts) {
-              map[part[0]] = part[1];  // Override existing entries.
+              map[part[0]] = part[1]; // Override existing entries.
             }
             return new _HttpBody('form', map);
           });
@@ -150,16 +148,15 @@ class HttpBodyHandlerImpl {
                 .then((body) => new _HttpBody("json", JSON.decode(body.body)));
 
           case "x-www-form-urlencoded":
-            return asText(ASCII)
-                .then((body) {
-                  var map = Uri.splitQueryString(body.body,
-                      encoding: defaultEncoding);
-                  var result = {};
-                  for (var key in map.keys) {
-                    result[key] = map[key];
-                  }
-                  return new _HttpBody("form", result);
-                });
+            return asText(ASCII).then((body) {
+              var map =
+                  Uri.splitQueryString(body.body, encoding: defaultEncoding);
+              var result = {};
+              for (var key in map.keys) {
+                result[key] = map[key];
+              }
+              return new _HttpBody("form", result);
+            });
 
           default:
             break;
@@ -201,12 +198,11 @@ class _HttpBody implements HttpBody {
 class _HttpRequestBody extends _HttpBody implements HttpRequestBody {
   final HttpRequest request;
 
-  _HttpRequestBody(this.request, HttpBody body)
-      : super(body.type, body.body);
+  _HttpRequestBody(this.request, HttpBody body) : super(body.type, body.body);
 }
 
-class _HttpClientResponseBody
-    extends _HttpBody implements HttpClientResponseBody {
+class _HttpClientResponseBody extends _HttpBody
+    implements HttpClientResponseBody {
   final HttpClientResponse response;
 
   _HttpClientResponseBody(this.response, HttpBody body)

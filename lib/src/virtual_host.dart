@@ -40,7 +40,6 @@ abstract class VirtualHost {
    */
   void addSource(Stream<HttpRequest> source);
 
-
   /**
    * Add a host to the [VirtualHost] instance. The host can be either a specific
    * domain (`my.domain.name`) or a wildcard-based domain name
@@ -53,13 +52,11 @@ abstract class VirtualHost {
   Stream<HttpRequest> addHost(String host);
 }
 
-
 class _VirtualHostDomain {
   StreamController<HttpRequest> any;
   StreamController<HttpRequest> exact;
   Map<String, _VirtualHostDomain> subDomains = {};
 }
-
 
 class _VirtualHost implements VirtualHost {
   final _VirtualHostDomain _topDomain = new _VirtualHostDomain();
