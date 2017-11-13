@@ -117,8 +117,7 @@ class HttpBodyHandler
    *
    * See [HttpBodyHandler] constructor for more info on [defaultEncoding].
    */
-  static Future<HttpRequestBody> processRequest(
-      HttpRequest request,
+  static Future<HttpRequestBody> processRequest(HttpRequest request,
       {Encoding defaultEncoding: UTF8}) {
     return HttpBodyHandlerImpl.processRequest(request, defaultEncoding);
   }
@@ -139,7 +138,6 @@ class HttpBodyHandler
   }
 }
 
-
 /**
  * A HTTP content body produced by [HttpBodyHandler] for either [HttpRequest]
  * or [HttpClientResponse].
@@ -157,7 +155,6 @@ abstract class HttpBody {
   dynamic get body;
 }
 
-
 /**
  * The [HttpBody] of a [HttpClientResponse] will be of type
  * [HttpClientResponseBody]. It contains the [HttpClientResponse] object
@@ -170,7 +167,6 @@ abstract class HttpClientResponseBody extends HttpBody {
    */
   HttpClientResponse get response;
 }
-
 
 /**
  * The [HttpBody] of a [HttpRequest] will be of type [HttpRequestBody]. It
@@ -186,7 +182,6 @@ abstract class HttpRequestBody extends HttpBody {
    */
   HttpRequest get request;
 }
-
 
 /**
  * A [HttpBodyFileUpload] object wraps a file upload, presenting a way for

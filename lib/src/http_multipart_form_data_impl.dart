@@ -24,16 +24,17 @@ class HttpMultipartFormDataImpl extends Stream
 
   Stream _stream;
 
-  HttpMultipartFormDataImpl(ContentType this.contentType,
-                         HeaderValue this.contentDisposition,
-                         HeaderValue this.contentTransferEncoding,
-                         MimeMultipart this._mimeMultipart,
-                         Encoding defaultEncoding) {
+  HttpMultipartFormDataImpl(
+      ContentType this.contentType,
+      HeaderValue this.contentDisposition,
+      HeaderValue this.contentTransferEncoding,
+      MimeMultipart this._mimeMultipart,
+      Encoding defaultEncoding) {
     _stream = _mimeMultipart;
     if (contentTransferEncoding != null) {
       // TODO(ajohnsen): Support BASE64, etc.
       throw new HttpException("Unsupported contentTransferEncoding: "
-                              "${contentTransferEncoding.value}");
+          "${contentTransferEncoding.value}");
     }
 
     if (contentType == null ||
@@ -52,8 +53,8 @@ class HttpMultipartFormDataImpl extends Stream
   bool get isText => _isText;
   bool get isBinary => !_isText;
 
-  static HttpMultipartFormData parse(MimeMultipart multipart,
-                                     Encoding defaultEncoding) {
+  static HttpMultipartFormData parse(
+      MimeMultipart multipart, Encoding defaultEncoding) {
     var type;
     var encoding;
     var disposition;
@@ -70,7 +71,7 @@ class HttpMultipartFormDataImpl extends Stream
 
         case 'content-disposition':
           disposition = HeaderValue.parse(multipart.headers[key],
-                                          preserveBackslash: true);
+              preserveBackslash: true);
           break;
 
         default:
@@ -87,13 +88,9 @@ class HttpMultipartFormDataImpl extends Stream
   }
 
   StreamSubscription listen(void onData(data),
-                            {void onDone(),
-                             Function onError,
-                             bool cancelOnError}) {
+      {void onDone(), Function onError, bool cancelOnError}) {
     return _stream.listen(onData,
-                          onDone: onDone,
-                          onError: onError,
-                          cancelOnError: cancelOnError);
+        onDone: onDone, onError: onError, cancelOnError: cancelOnError);
   }
 
   String value(String name) {

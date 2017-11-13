@@ -49,7 +49,6 @@ class VirtualDirectory {
 
   final List<String> _pathPrefixSegments;
 
-
   final RegExp _invalidPathRegExp = new RegExp("[\\\/\x00]");
 
   _ErrorCallback _errorCallback;
@@ -57,7 +56,8 @@ class VirtualDirectory {
 
   static List<String> _parsePathPrefix(String pathPrefix) {
     if (pathPrefix == null) return <String>[];
-    return new Uri(path: pathPrefix).pathSegments
+    return new Uri(path: pathPrefix)
+        .pathSegments
         .where((segment) => segment.isNotEmpty)
         .toList();
   }
@@ -95,26 +95,25 @@ class VirtualDirectory {
         return request.response.done;
       }
     }
-    return _locateResource('.', iterator..moveNext())
-        .then((entity) {
-          if (entity is File) {
-            serveFile(entity, request);
-          } else if (entity is Directory) {
-            if (allowDirectoryListing) {
-              _serveDirectory(entity, request);
-            } else {
-              _serveErrorPage(HttpStatus.NOT_FOUND, request);
-            }
-          } else if (entity is _DirectoryRedirect) {
-            // TODO(ajohnsen): Use HttpRequest.requestedUri once 1.2 is out.
-            request.response.redirect(Uri.parse('${request.uri}/'),
-                                      status: HttpStatus.MOVED_PERMANENTLY);
-          } else {
-            assert(entity == null);
-            _serveErrorPage(HttpStatus.NOT_FOUND, request);
-          }
-          return request.response.done;
-        });
+    return _locateResource('.', iterator..moveNext()).then((entity) {
+      if (entity is File) {
+        serveFile(entity, request);
+      } else if (entity is Directory) {
+        if (allowDirectoryListing) {
+          _serveDirectory(entity, request);
+        } else {
+          _serveErrorPage(HttpStatus.NOT_FOUND, request);
+        }
+      } else if (entity is _DirectoryRedirect) {
+        // TODO(ajohnsen): Use HttpRequest.requestedUri once 1.2 is out.
+        request.response.redirect(Uri.parse('${request.uri}/'),
+            status: HttpStatus.MOVED_PERMANENTLY);
+      } else {
+        assert(entity == null);
+        _serveErrorPage(HttpStatus.NOT_FOUND, request);
+      }
+      return request.response.done;
+    });
   }
 
   /**
@@ -141,51 +140,49 @@ class VirtualDirectory {
     // If we jail to root, the relative path can never go up.
     if (jailRoot && split(path).first == "..") return new Future.value(null);
     String fullPath() => join(root, path);
-    return FileSystemEntity.type(fullPath(), followLinks: false)
-        .then((type) {
-          switch (type) {
-            case FileSystemEntityType.FILE:
-              if (segments.current == null) {
-                return new File(fullPath());
-              }
-              break;
-
-            case FileSystemEntityType.DIRECTORY:
-              String dirFullPath() => '${fullPath()}$separator';
-              var current = segments.current;
-              if (current == null) {
-                if (path == '.') return new Directory(dirFullPath());
-                return const _DirectoryRedirect();
-              }
-              bool hasNext = segments.moveNext();
-              if (!hasNext && current == "") {
-                return new Directory(dirFullPath());
-              } else {
-                if (_invalidPathRegExp.hasMatch(current)) break;
-                return _locateResource(join(path, current), segments);
-              }
-              break;
-
-            case FileSystemEntityType.LINK:
-              if (followLinks) {
-                return new Link(fullPath()).target()
-                    .then((target) {
-                      String targetPath = normalize(target);
-                      if (isAbsolute(targetPath)) {
-                        // If we jail to root, the path can never be absolute.
-                        if (jailRoot) return null;
-                        return _locateResource(targetPath, segments);
-                      } else {
-                        targetPath = join(dirname(path), targetPath);
-                        return _locateResource(targetPath, segments);
-                      }
-                    });
-              }
-              break;
+    return FileSystemEntity.type(fullPath(), followLinks: false).then((type) {
+      switch (type) {
+        case FileSystemEntityType.FILE:
+          if (segments.current == null) {
+            return new File(fullPath());
           }
-          // Return `null` on fall-through, to indicate NOT_FOUND.
-          return null;
-        });
+          break;
+
+        case FileSystemEntityType.DIRECTORY:
+          String dirFullPath() => '${fullPath()}$separator';
+          var current = segments.current;
+          if (current == null) {
+            if (path == '.') return new Directory(dirFullPath());
+            return const _DirectoryRedirect();
+          }
+          bool hasNext = segments.moveNext();
+          if (!hasNext && current == "") {
+            return new Directory(dirFullPath());
+          } else {
+            if (_invalidPathRegExp.hasMatch(current)) break;
+            return _locateResource(join(path, current), segments);
+          }
+          break;
+
+        case FileSystemEntityType.LINK:
+          if (followLinks) {
+            return new Link(fullPath()).target().then((target) {
+              String targetPath = normalize(target);
+              if (isAbsolute(targetPath)) {
+                // If we jail to root, the path can never be absolute.
+                if (jailRoot) return null;
+                return _locateResource(targetPath, segments);
+              } else {
+                targetPath = join(dirname(path), targetPath);
+                return _locateResource(targetPath, segments);
+              }
+            });
+          }
+          break;
+      }
+      // Return `null` on fall-through, to indicate NOT_FOUND.
+      return null;
+    });
   }
 
   /**
@@ -224,15 +221,15 @@ class VirtualDirectory {
           if (matches != null &&
               (matches[1].isNotEmpty || matches[2].isNotEmpty)) {
             // Serve sub-range.
-            int start;  // First byte position - inclusive.
-            int end;  // Last byte position - inclusive.
+            int start; // First byte position - inclusive.
+            int end; // Last byte position - inclusive.
             if (matches[1].isEmpty) {
               start = length - int.parse(matches[2]);
               if (start < 0) start = 0;
               end = length - 1;
             } else {
               start = int.parse(matches[1]);
-              end = matches[2].isEmpty ? length - 1: int.parse(matches[2]);
+              end = matches[2].isEmpty ? length - 1 : int.parse(matches[2]);
             }
             // If the range is syntactically invalid the Range header
             // MUST be ignored (RFC 2616 section 14.35.1).
@@ -243,8 +240,8 @@ class VirtualDirectory {
 
               if (start >= length) {
                 response
-                    ..statusCode = HttpStatus.REQUESTED_RANGE_NOT_SATISFIABLE
-                    ..close();
+                  ..statusCode = HttpStatus.REQUESTED_RANGE_NOT_SATISFIABLE
+                  ..close();
                 return;
               }
 
@@ -253,19 +250,20 @@ class VirtualDirectory {
 
               // Set 'Partial Content' status code.
               response
-                  ..statusCode = HttpStatus.PARTIAL_CONTENT
-                  ..headers.set(HttpHeaders.CONTENT_RANGE,
-                                'bytes $start-$end/$length');
+                ..statusCode = HttpStatus.PARTIAL_CONTENT
+                ..headers.set(
+                    HttpHeaders.CONTENT_RANGE, 'bytes $start-$end/$length');
 
               // Pipe the 'range' of the file.
               if (request.method == 'HEAD') {
                 response.close();
               } else {
-                file.openRead(start, end + 1)
+                file
+                    .openRead(start, end + 1)
                     .pipe(new _VirtualDirectoryFileStream(response, file.path))
                     .catchError((_) {
-                      // TODO(kevmoo): log errors
-                    });
+                  // TODO(kevmoo): log errors
+                });
               }
               return;
             }
@@ -276,11 +274,12 @@ class VirtualDirectory {
         if (request.method == 'HEAD') {
           response.close();
         } else {
-          file.openRead()
+          file
+              .openRead()
               .pipe(new _VirtualDirectoryFileStream(response, file.path))
               .catchError((_) {
-                // TODO(kevmoo): log errors
-              });
+            // TODO(kevmoo): log errors
+          });
         }
       });
     }).catchError((_) {
@@ -309,7 +308,7 @@ class VirtualDirectory {
       var path = Uri.decodeComponent(request.uri.path);
       var encodedPath = new HtmlEscape().convert(path);
       var header =
-'''<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+          '''<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
 http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -326,8 +325,7 @@ http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 ''';
       var server = response.headers.value(HttpHeaders.SERVER);
       if (server == null) server = "";
-      var footer =
-'''</table>
+      var footer = '''</table>
 $server
 </body>
 </html>
@@ -348,8 +346,7 @@ $server
         }
         var encodedName = new HtmlEscape().convert(name);
 
-        var entry =
-'''  <tr>
+        var entry = '''  <tr>
     <td><a href="$encodedLink">$encodedName</a></td>
     <td>$encodedModified</td>
     <td style="text-align: right">$encodedSize</td>
@@ -365,15 +362,9 @@ $server
         var name = basename(entity.path);
         var stat = entity.statSync();
         if (entity is File) {
-          add(name,
-              stat.modified.toString(),
-              stat.size,
-              false);
+          add(name, stat.modified.toString(), stat.size, false);
         } else if (entity is Directory) {
-          add(name,
-              stat.modified.toString(),
-              null,
-              true);
+          add(name, stat.modified.toString(), null, true);
         }
       }, onError: (e) {
         // TODO(kevmoo): log error
@@ -404,8 +395,7 @@ $server
 
     var server = response.headers.value(HttpHeaders.SERVER);
     if (server == null) server = "";
-    var page =
-'''<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+    var page = '''<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
 http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -429,41 +419,38 @@ class _VirtualDirectoryFileStream extends StreamConsumer<List<int>> {
   _VirtualDirectoryFileStream(HttpResponse this.response, String this.path);
 
   Future addStream(Stream<List<int>> stream) {
-    stream.listen(
-        (data) {
-          if (buffer == null) {
-            response.add(data);
-            return;
-          }
-          if (buffer.length == 0) {
-            if (data.length >= defaultMagicNumbersMaxLength) {
-              setMimeType(data);
-              response.add(data);
-              buffer = null;
-            } else {
-              buffer.addAll(data);
-            }
-          } else {
-            buffer.addAll(data);
-            if (buffer.length >= defaultMagicNumbersMaxLength) {
-              setMimeType(buffer);
-              response.add(buffer);
-              buffer = null;
-            }
-          }
-        },
-        onDone: () {
-          if (buffer != null) {
-            if (buffer.length == 0) {
-              setMimeType(null);
-            } else {
-              setMimeType(buffer);
-              response.add(buffer);
-            }
-          }
-          response.close();
-        },
-        onError: response.addError);
+    stream.listen((data) {
+      if (buffer == null) {
+        response.add(data);
+        return;
+      }
+      if (buffer.length == 0) {
+        if (data.length >= defaultMagicNumbersMaxLength) {
+          setMimeType(data);
+          response.add(data);
+          buffer = null;
+        } else {
+          buffer.addAll(data);
+        }
+      } else {
+        buffer.addAll(data);
+        if (buffer.length >= defaultMagicNumbersMaxLength) {
+          setMimeType(buffer);
+          response.add(buffer);
+          buffer = null;
+        }
+      }
+    }, onDone: () {
+      if (buffer != null) {
+        if (buffer.length == 0) {
+          setMimeType(null);
+        } else {
+          setMimeType(buffer);
+          response.add(buffer);
+        }
+      }
+      response.close();
+    }, onError: response.addError);
     return response.done;
   }
 
