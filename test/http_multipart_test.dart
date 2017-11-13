@@ -43,7 +43,7 @@ class FormField {
   }
 }
 
-void postDataTest(List<int> message, String contentType, String boundary,
+Future postDataTest(List<int> message, String contentType, String boundary,
     List<FormField> expectedFields,
     {defaultEncoding: LATIN1}) async {
   var addr = (await InternetAddress.lookup("localhost"))[0];
@@ -74,7 +74,7 @@ void postDataTest(List<int> message, String contentType, String boundary,
             });
           })
           .toList()
-          .then(Future.wait)
+          .then((values) => Future.wait(values as List<Future>))
           .then((fields) {
             expect(fields, equals(expectedFields));
             request.response.close().then((_) => server.close());
@@ -133,7 +133,7 @@ Content of file\r
         contentType: 'text/plain', filename: 'C:\\file1".txt')
   ]);
   // Similar test using Chrome posting.
-  message = [
+  var message2 = [
     // Dartfmt, please do not touch.
     45, 45, 45, 45, 45, 45, 87, 101, 98, 75, 105, 116, 70, 111, 114, 109, 66,
     111, 117, 110, 100, 97, 114, 121, 81, 83, 113, 108, 56, 107, 68, 65, 76,
@@ -171,7 +171,7 @@ Content of file\r
     10, 125
   ];
 
-  postDataTest(message, 'multipart/form-data',
+  postDataTest(message2, 'multipart/form-data',
       '----WebKitFormBoundaryQSql8kDALM7tAkC1', [
     new FormField('submit-name', 'Test'),
     new FormField('files', data,
@@ -181,7 +181,7 @@ Content of file\r
   // In Chrome, Safari and Firefox HTML entity encoding might be used for
   // values in form fields. The HTML entity encoding for ひらがな is
   // &#12402;&#12425;&#12364;&#12394;
-  message = [
+  var message3 = [
     // Dartfmt, please do not touch.
     45, 45, 45, 45, 45, 45, 87, 101, 98, 75, 105, 116, 70, 111, 114, 109, 66,
     111, 117, 110, 100, 97, 114, 121, 118, 65, 86, 122, 117, 103, 75, 77, 116,
@@ -196,7 +196,7 @@ Content of file\r
   ];
 
   postDataTest(
-      message,
+      message3,
       'multipart/form-data',
       '----WebKitFormBoundaryvAVzugKMtZbyWoBG',
       [new FormField('name', '&#12402;&#12425;&#12364;&#12394;')],
@@ -204,7 +204,7 @@ Content of file\r
 
   // The UTF-8 encoding of ひらがな is
   // [227, 129, 178, 227, 130, 137, 227, 129, 140, 227, 129, 170].
-  message = [
+  var message4 = [
     // Dartfmt, please do not touch.
     45, 45, 45, 45, 45, 45, 87, 101, 98, 75, 105, 116, 70, 111, 114, 109, 66,
     111, 117, 110, 100, 97, 114, 121, 71, 88, 116, 66, 114, 99, 106, 120, 104,
@@ -218,11 +218,11 @@ Content of file\r
     13, 10
   ];
 
-  postDataTest(message, 'multipart/form-data',
+  postDataTest(message4, 'multipart/form-data',
       '----WebKitFormBoundaryGXtBrcjxheKeN6i0', [new FormField('test', 'ひらがな')],
       defaultEncoding: UTF8);
 
-  message = [
+  var message5 = [
     // Dartfmt, please do not touch.
     45, 45, 45, 45, 45, 45, 87, 101, 98, 75, 105, 116, 70, 111, 114, 109, 66,
     111, 117, 110, 100, 97, 114, 121, 102, 101, 48, 69, 122, 86, 49, 97, 78,
@@ -235,7 +235,7 @@ Content of file\r
     49, 98, 80, 104, 45, 45, 13, 10
   ];
 
-  postDataTest(message, 'multipart/form-data',
+  postDataTest(message5, 'multipart/form-data',
       '----WebKitFormBoundaryfe0EzV1aNysD1bPh', [new FormField('name', 'øv')]);
 }
 

@@ -123,7 +123,7 @@ class HttpBodyHandlerImpl {
             });
           })
           .fold([], (l, f) => l..add(f))
-          .then(Future.wait)
+          .then((values) => Future.wait(values as List<Future>))
           .then((parts) {
             Map<String, dynamic> map = new Map<String, dynamic>();
             for (var part in parts) {

@@ -211,7 +211,7 @@ Future<MockHttpResponse> _withMockRequest(
         return _withMockRequest(virDir, newMock);
       }
     }
-    return response;
+    return response as MockHttpResponse;
   });
 }
 
