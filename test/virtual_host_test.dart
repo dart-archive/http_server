@@ -16,7 +16,7 @@ void main() {
   test('empty-host', () {
     expect(
         HttpServer.bind('localhost', 0).then((server) {
-          var virHost = new VirtualHost(server);
+          new VirtualHost(server);
           return getStatusCode(server.port, '/').whenComplete(server.close);
         }),
         completion(equals(HttpStatus.FORBIDDEN)));
