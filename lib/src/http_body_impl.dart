@@ -14,7 +14,7 @@ import 'http_body.dart';
 import 'http_multipart_form_data.dart';
 
 class HttpBodyHandlerTransformer
-    implements StreamTransformer<HttpRequest, HttpRequestBody> {
+    extends StreamTransformerBase<HttpRequest, HttpRequestBody> {
   final Encoding _defaultEncoding;
 
   const HttpBodyHandlerTransformer(this._defaultEncoding);
