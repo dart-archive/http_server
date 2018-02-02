@@ -7,11 +7,16 @@ library utils;
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
-import "package:unittest/unittest.dart";
+import 'dart:mirrors';
+
+import "package:test/test.dart";
+import 'package:test/src/backend/invoker.dart';
 
 import 'package:http_server/http_server.dart';
 
 import 'http_mock.dart';
+
+Object get currentTestCase => Invoker.current.liveTest;
 
 SecurityContext serverContext;
 SecurityContext clientContext;
@@ -292,10 +297,11 @@ void _addRangeHeader(request, int from, int to) {
   }
 }
 
-const CERTIFICATE = "localhost_cert";
-
 void setupSecure() {
-  String localFile(path) => Platform.script.resolve(path).toFilePath();
+  var currentFileUri =
+      (reflect(setupSecure) as ClosureMirror).function.location.sourceUri;
+
+  String localFile(path) => currentFileUri.resolve(path).toFilePath();
 
   serverContext = new SecurityContext()
     ..useCertificateChain(localFile('certificates/server_chain.pem'))

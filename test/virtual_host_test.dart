@@ -5,13 +5,15 @@
 import 'dart:async';
 import 'dart:io';
 
-import "package:unittest/unittest.dart";
+import "package:test/test.dart";
 import "package:http_server/http_server.dart";
 
 import 'utils.dart';
 
 void main() {
-  setupSecure();
+  setUpAll(() {
+    setupSecure();
+  });
 
   test('empty-host', () {
     expect(
