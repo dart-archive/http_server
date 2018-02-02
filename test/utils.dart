@@ -36,15 +36,17 @@ void _testVirtualDir(String name, bool useMocks, Future func(Directory dir)) {
     name = '$name, with mocks';
   }
 
-  test(name, () {
+  test(name, () async {
     // see subsequent access to this expando below
     _isMockTestExpando[currentTestCase] = useMocks;
 
     var dir = Directory.systemTemp.createTempSync('http_server_virtual_');
 
-    return func(dir).whenComplete(() {
-      return dir.delete(recursive: true);
-    });
+    try {
+      await func(dir);
+    } finally {
+      await dir.delete(recursive: true);
+    }
   });
 }
 
@@ -68,7 +70,6 @@ Future<int> getStatusCodeForVirtDir(VirtualDirectory virtualDir, String path,
       return response.statusCode;
     });
   }
-  ;
 
   assert(_isMockTestExpando[currentTestCase] == false);
 
@@ -91,28 +92,31 @@ Future<int> getStatusCode(int port, String path,
     bool rawPath: false,
     bool followRedirects: true,
     int from,
-    int to}) {
+    int to}) async {
   var uri = _getUri(port, path, secure: secure, rawPath: rawPath);
 
-  var client;
+  HttpClient client;
   if (secure) {
     client = new HttpClient(context: clientContext);
   } else {
     client = new HttpClient();
   }
-  return client
-      .getUrl(uri)
-      .then((request) {
-        if (!followRedirects) request.followRedirects = false;
-        if (host != null) request.headers.host = host;
-        if (ifModifiedSince != null) {
-          request.headers.ifModifiedSince = ifModifiedSince;
-        }
-        _addRangeHeader(request, from, to);
-        return request.close();
-      })
-      .then((response) => response.drain().then((_) => response.statusCode))
-      .whenComplete(() => client.close());
+
+  try {
+    var request = await client.getUrl(uri);
+
+    if (!followRedirects) request.followRedirects = false;
+    if (host != null) request.headers.host = host;
+    if (ifModifiedSince != null) {
+      request.headers.ifModifiedSince = ifModifiedSince;
+    }
+    _addRangeHeader(request, from, to);
+    var response = await request.close();
+    await response.drain();
+    return response.statusCode;
+  } finally {
+    client.close();
+  }
 }
 
 Future<HttpHeaders> getHeaders(VirtualDirectory virDir, String path,
@@ -147,7 +151,6 @@ Future<String> getAsString(VirtualDirectory virtualDir, String path) {
       return response.mockContent;
     });
   }
-  ;
 
   assert(_isMockTestExpando[currentTestCase] == false);
 
@@ -169,7 +172,6 @@ Future<List<int>> getAsBytes(VirtualDirectory virtualDir, String path,
       return response.mockContentBinary;
     });
   }
-  ;
 
   assert(_isMockTestExpando[currentTestCase] == false);
 
@@ -191,7 +193,6 @@ Future<List> getContentAndResponse(VirtualDirectory virtualDir, String path,
       return [response.mockContentBinary, response];
     });
   }
-  ;
 
   assert(_isMockTestExpando[currentTestCase] == false);
 
@@ -201,32 +202,36 @@ Future<List> getContentAndResponse(VirtualDirectory virtualDir, String path,
 }
 
 Future<MockHttpResponse> _withMockRequest(
-    VirtualDirectory virDir, MockHttpRequest request) {
-  return virDir.serveRequest(request).then((value) {
-    expect(value, isNull);
-    expect(request.response.mockDone, isTrue);
-    return request.response;
-  }).then((HttpResponse response) {
-    if (response.statusCode == HttpStatus.MOVED_PERMANENTLY ||
-        response.statusCode == HttpStatus.MOVED_TEMPORARILY) {
-      if (request.followRedirects == true) {
-        var uri = Uri.parse(response.headers.value(HttpHeaders.LOCATION));
-        var newMock = new MockHttpRequest(uri, followRedirects: true);
+    VirtualDirectory virDir, MockHttpRequest request) async {
+  var value = await virDir.serveRequest(request);
 
-        return _withMockRequest(virDir, newMock);
-      }
+  expect(value, isNull);
+  expect(request.response.mockDone, isTrue);
+
+  var response = request.response;
+
+  if (response.statusCode == HttpStatus.MOVED_PERMANENTLY ||
+      response.statusCode == HttpStatus.MOVED_TEMPORARILY) {
+    if (request.followRedirects == true) {
+      var uri = Uri.parse(response.headers.value(HttpHeaders.LOCATION));
+      var newMock = new MockHttpRequest(uri, followRedirects: true);
+
+      return _withMockRequest(virDir, newMock);
     }
-    return response as MockHttpResponse;
-  });
+  }
+  return response;
 }
 
-Future _withServer(VirtualDirectory virDir, Future func(int port)) {
-  HttpServer server;
-  return HttpServer.bind('localhost', 0).then((value) {
-    server = value;
+Future<T> _withServer<T>(
+    VirtualDirectory virDir, Future<T> func(int port)) async {
+  var server = await HttpServer.bind('localhost', 0);
+
+  try {
     virDir.serve(server);
-    return func(server.port);
-  }).whenComplete(() => server.close());
+    return await func(server.port);
+  } finally {
+    await server.close();
+  }
 }
 
 Future<HttpHeaders> _getHeaders(int port, String path, int from, int to) {
