@@ -7,7 +7,7 @@ import 'dart:io';
 
 import "package:http_server/http_server.dart";
 import 'package:path/path.dart' as pathos;
-import "package:unittest/unittest.dart";
+import "package:test/test.dart";
 
 import 'utils.dart';
 
@@ -498,7 +498,7 @@ void main() {
           contentRange = 'bytes $from-$to/${fileContent.length}';
         }
         return getContentAndResponse(virDir, '/file', from: from, to: to)
-            .then(expectAsync((result) {
+            .then(expectAsync1((result) {
           var content = result[0];
           var response = result[1];
           expect(content, expected);
@@ -519,7 +519,7 @@ void main() {
         () => test(0, 10, fileContent, 'bytes 0-9/10'),
         () => test(9, 10, [9], 'bytes 9-9/10'),
         () => test(0, 1000, fileContent, 'bytes 0-9/10'),
-      ], (f) => f().then(expectAsync((_) {})));
+      ], (f) => f().then(expectAsync1((_) {})));
     });
 
     testVirtualDir('prefix-range', (dir) {
@@ -538,7 +538,7 @@ void main() {
               '${fileContent.length}';
         }
         return getContentAndResponse(virDir, '/file', from: from)
-            .then(expectAsync((result) {
+            .then(expectAsync1((result) {
           var content = result[0];
           var response = result[1];
           expect(content, expected);
@@ -559,7 +559,7 @@ void main() {
         () => test(10, fileContent, null, false, HttpStatus.OK),
         () => test(11, fileContent, null, false, HttpStatus.OK),
         () => test(1000, fileContent, null, false, HttpStatus.OK),
-      ], (f) => f().then(expectAsync((_) {})));
+      ], (f) => f().then(expectAsync1((_) {})));
     });
 
     testVirtualDir('suffix-range', (dir) {
@@ -575,7 +575,7 @@ void main() {
               '${fileContent.length}';
         }
         return getContentAndResponse(virDir, '/file', to: to)
-            .then(expectAsync((result) {
+            .then(expectAsync1((result) {
           var content = result[0];
           var response = result[1];
           expect(content, expected);
@@ -591,14 +591,14 @@ void main() {
         () => test(10),
         () => test(11, fileContent, 'bytes 0-9/10'),
         () => test(1000, fileContent, 'bytes 0-9/10')
-      ], (f) => f().then(expectAsync((_) {})));
+      ], (f) => f().then(expectAsync1((_) {})));
     });
 
     testVirtualDir('unsatisfiable-range', (dir) {
       prepare(dir);
       Future test(int from, int to) {
         return getContentAndResponse(virDir, '/file', from: from, to: to)
-            .then(expectAsync((result) {
+            .then(expectAsync1((result) {
           var content = result[0];
           var response = result[1];
           expect(content.length, 0);
@@ -610,14 +610,14 @@ void main() {
 
       return Future.forEach(
           [() => test(10, 11), () => test(10, 1000), () => test(1000, 1000)],
-          (f) => f().then(expectAsync((_) {})));
+          (f) => f().then(expectAsync1((_) {})));
     });
 
     testVirtualDir('invalid-range', (dir) {
       prepare(dir);
       Future test(int from, int to) {
         return getContentAndResponse(virDir, '/file', from: from, to: to)
-            .then(expectAsync((result) {
+            .then(expectAsync1((result) {
           var content = result[0];
           var response = result[1];
           expect(content, fileContent);
@@ -631,7 +631,7 @@ void main() {
         () => test(10, 0),
         () => test(1000, 999),
         () => test(null, 0), // This is effectively range 10-9.
-      ], (f) => f().then(expectAsync((_) {})));
+      ], (f) => f().then(expectAsync1((_) {})));
     });
   });
 
@@ -742,7 +742,7 @@ void main() {
 
       return getAsString(virDir, '/').then((result) {
         expect(result, 'file contents');
-        return getHeaders(virDir, '/').then(expectAsync((headers) {
+        return getHeaders(virDir, '/').then(expectAsync1((headers) {
           expect('file contents'.length, headers.contentLength);
         }));
       });
