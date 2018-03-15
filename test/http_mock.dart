@@ -178,7 +178,7 @@ class MockHttpResponse implements HttpResponse {
 
   void write(Object obj) {
     var str = obj.toString();
-    add(UTF8.encode(str));
+    add(utf8.encode(str));
   }
 
   /*
@@ -186,7 +186,7 @@ class MockHttpResponse implements HttpResponse {
    */
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 
-  String get mockContent => UTF8.decode(_buffer);
+  String get mockContent => utf8.decode(_buffer);
 
   List<int> get mockContentBinary => _buffer;
 

@@ -144,11 +144,11 @@ class HttpBodyHandlerImpl {
       case "application":
         switch (contentType.subType) {
           case "json":
-            return asText(UTF8)
-                .then((body) => new _HttpBody("json", JSON.decode(body.body)));
+            return asText(utf8)
+                .then((body) => new _HttpBody("json", jsonDecode(body.body)));
 
           case "x-www-form-urlencoded":
-            return asText(ASCII).then((body) {
+            return asText(ascii).then((body) {
               var map =
                   Uri.splitQueryString(body.body, encoding: defaultEncoding);
               var result = {};

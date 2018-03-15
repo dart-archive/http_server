@@ -82,6 +82,6 @@ abstract class HttpMultipartFormData implements Stream {
    * constraints.html#multipart-form-data).
    */
   static HttpMultipartFormData parse(MimeMultipart multipart,
-          {Encoding defaultEncoding: UTF8}) =>
+          {Encoding defaultEncoding: utf8}) =>
       HttpMultipartFormDataImpl.parse(multipart, defaultEncoding);
 }
