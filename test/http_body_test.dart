@@ -63,7 +63,7 @@ void testHttpClientResponseBody() {
 void testHttpServerRequestBody() {
   void test(
       String mimeType, List<int> content, dynamic expectedBody, String type,
-      {bool shouldFail: false, Encoding defaultEncoding: UTF8}) {
+      {bool shouldFail: false, Encoding defaultEncoding: utf8}) {
     HttpServer.bind("localhost", 0).then((server) {
       server
           .transform(new HttpBodyHandler(defaultEncoding: defaultEncoding))
@@ -251,26 +251,26 @@ File content\r
 
   test('application/x-www-form-urlencoded', 'a=%F8+%26%23548%3B'.codeUnits,
       {'a': 'ø &#548;'}, "form",
-      defaultEncoding: LATIN1);
+      defaultEncoding: latin1);
 
   test('application/x-www-form-urlencoded', 'name=%26'.codeUnits, {'name': '&'},
       "form",
-      defaultEncoding: LATIN1);
+      defaultEncoding: latin1);
 
   test('application/x-www-form-urlencoded', 'name=%F8%26'.codeUnits,
       {'name': 'ø&'}, "form",
-      defaultEncoding: LATIN1);
+      defaultEncoding: latin1);
 
   test('application/x-www-form-urlencoded', 'name=%26%3B'.codeUnits,
       {'name': '&;'}, "form",
-      defaultEncoding: LATIN1);
+      defaultEncoding: latin1);
 
   test(
       'application/x-www-form-urlencoded',
       'name=%26%23548%3B%26%23548%3B'.codeUnits,
       {'name': '&#548;&#548;'},
       "form",
-      defaultEncoding: LATIN1);
+      defaultEncoding: latin1);
 
   test('application/x-www-form-urlencoded', 'name=%26'.codeUnits, {'name': '&'},
       "form");

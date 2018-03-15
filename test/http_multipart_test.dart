@@ -45,7 +45,7 @@ class FormField {
 
 Future postDataTest(List<int> message, String contentType, String boundary,
     List<FormField> expectedFields,
-    {defaultEncoding: LATIN1}) async {
+    {defaultEncoding: latin1}) async {
   var addr = (await InternetAddress.lookup("localhost"))[0];
   HttpServer.bind(addr, 0).then((server) {
     server.listen((request) {
@@ -200,7 +200,7 @@ Content of file\r
       'multipart/form-data',
       '----WebKitFormBoundaryvAVzugKMtZbyWoBG',
       [new FormField('name', '&#12402;&#12425;&#12364;&#12394;')],
-      defaultEncoding: UTF8);
+      defaultEncoding: utf8);
 
   // The UTF-8 encoding of ひらがな is
   // [227, 129, 178, 227, 130, 137, 227, 129, 140, 227, 129, 170].
@@ -220,7 +220,7 @@ Content of file\r
 
   postDataTest(message4, 'multipart/form-data',
       '----WebKitFormBoundaryGXtBrcjxheKeN6i0', [new FormField('test', 'ひらがな')],
-      defaultEncoding: UTF8);
+      defaultEncoding: utf8);
 
   var message5 = [
     // Dartfmt, please do not touch.

@@ -338,7 +338,7 @@ $server
         if (modified == null) modified = "";
         var encodedSize = new HtmlEscape().convert(size.toString());
         var encodedModified = new HtmlEscape().convert(modified);
-        var encodedLink = new HtmlEscape(HtmlEscapeMode.ATTRIBUTE)
+        var encodedLink = new HtmlEscape(HtmlEscapeMode.attribute)
             .convert(Uri.encodeComponent(name));
         if (folder) {
           encodedLink += '/';
