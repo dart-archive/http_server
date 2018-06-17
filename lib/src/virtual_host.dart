@@ -142,7 +142,7 @@ class _VirtualHost implements VirtualHost {
       _unhandledController.add(request);
       return;
     }
-    request.response.statusCode = HttpStatus.FORBIDDEN;
+    request.response.statusCode = HttpStatus.forbidden;
     request.response.close();
   }
 }

@@ -11,10 +11,11 @@ class MockHttpHeaders implements HttpHeaders {
 
   operator [](key) => _headers[key];
 
-  int get contentLength => int.parse(_headers[HttpHeaders.CONTENT_LENGTH][0]);
+  int get contentLength =>
+      int.parse(_headers[HttpHeaders.contentLengthHeader][0]);
 
   DateTime get ifModifiedSince {
-    List<String> values = _headers[HttpHeaders.IF_MODIFIED_SINCE];
+    List<String> values = _headers[HttpHeaders.ifModifiedSinceHeader];
     if (values != null) {
       try {
         return HttpDate.parse(values[0]);
@@ -28,7 +29,7 @@ class MockHttpHeaders implements HttpHeaders {
   void set ifModifiedSince(DateTime ifModifiedSince) {
     // Format "ifModifiedSince" header with date in Greenwich Mean Time (GMT).
     String formatted = HttpDate.format(ifModifiedSince.toUtc());
-    _set(HttpHeaders.IF_MODIFIED_SINCE, formatted);
+    _set(HttpHeaders.ifModifiedSinceHeader, formatted);
   }
 
   ContentType contentType;
@@ -53,11 +54,11 @@ class MockHttpHeaders implements HttpHeaders {
 
   // [name] must be a lower-case version of the name.
   void _add(String name, value) {
-    if (name == HttpHeaders.IF_MODIFIED_SINCE) {
+    if (name == HttpHeaders.ifModifiedSinceHeader) {
       if (value is DateTime) {
         ifModifiedSince = value;
       } else if (value is String) {
-        _set(HttpHeaders.IF_MODIFIED_SINCE, value);
+        _set(HttpHeaders.ifModifiedSinceHeader, value);
       } else {
         throw new HttpException("Unexpected type for header named $name");
       }
@@ -147,7 +148,7 @@ class MockHttpResponse implements HttpResponse {
 
   bool _isDone = false;
 
-  int statusCode = HttpStatus.OK;
+  int statusCode = HttpStatus.ok;
 
   String get reasonPhrase => _findReasonPhrase(statusCode);
 
@@ -170,9 +171,9 @@ class MockHttpResponse implements HttpResponse {
     // doesn't seem to be hit...hmm...
   }
 
-  Future redirect(Uri location, {int status: HttpStatus.MOVED_TEMPORARILY}) {
+  Future redirect(Uri location, {int status: HttpStatus.movedPermanently}) {
     this.statusCode = status;
-    headers.set(HttpHeaders.LOCATION, location.toString());
+    headers.set(HttpHeaders.locationHeader, location.toString());
     return close();
   }
 
@@ -200,7 +201,7 @@ class MockHttpResponse implements HttpResponse {
     }
 
     switch (statusCode) {
-      case HttpStatus.NOT_FOUND:
+      case HttpStatus.notFound:
         return "Not Found";
       default:
         return "Status $statusCode";

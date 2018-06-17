@@ -210,10 +210,10 @@ Future<MockHttpResponse> _withMockRequest(
 
   var response = request.response;
 
-  if (response.statusCode == HttpStatus.MOVED_PERMANENTLY ||
-      response.statusCode == HttpStatus.MOVED_TEMPORARILY) {
+  if (response.statusCode == HttpStatus.movedPermanently ||
+      response.statusCode == HttpStatus.movedTemporarily) {
     if (request.followRedirects == true) {
-      var uri = Uri.parse(response.headers.value(HttpHeaders.LOCATION));
+      var uri = Uri.parse(response.headers.value(HttpHeaders.locationHeader));
       var newMock = new MockHttpRequest(uri, followRedirects: true);
 
       return _withMockRequest(virDir, newMock);
@@ -298,7 +298,7 @@ void _addRangeHeader(request, int from, int to) {
   var fromStr = from != null ? '$from' : '';
   var toStr = to != null ? '$to' : '';
   if (fromStr.isNotEmpty || toStr.isNotEmpty) {
-    request.headers.set(HttpHeaders.RANGE, 'bytes=$fromStr-$toStr');
+    request.headers.set(HttpHeaders.rangeHeader, 'bytes=$fromStr-$toStr');
   }
 }
 

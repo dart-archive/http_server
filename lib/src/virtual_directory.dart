@@ -91,7 +91,7 @@ class VirtualDirectory {
     var iterator = request.uri.pathSegments.iterator;
     for (var segment in _pathPrefixSegments) {
       if (!iterator.moveNext() || iterator.current != segment) {
-        _serveErrorPage(HttpStatus.NOT_FOUND, request);
+        _serveErrorPage(HttpStatus.notFound, request);
         return request.response.done;
       }
     }
@@ -102,15 +102,15 @@ class VirtualDirectory {
         if (allowDirectoryListing) {
           _serveDirectory(entity, request);
         } else {
-          _serveErrorPage(HttpStatus.NOT_FOUND, request);
+          _serveErrorPage(HttpStatus.notFound, request);
         }
       } else if (entity is _DirectoryRedirect) {
         // TODO(ajohnsen): Use HttpRequest.requestedUri once 1.2 is out.
         request.response.redirect(Uri.parse('${request.uri}/'),
-            status: HttpStatus.MOVED_PERMANENTLY);
+            status: HttpStatus.movedPermanently);
       } else {
         assert(entity == null);
-        _serveErrorPage(HttpStatus.NOT_FOUND, request);
+        _serveErrorPage(HttpStatus.notFound, request);
       }
       return request.response.done;
     });
@@ -142,13 +142,13 @@ class VirtualDirectory {
     String fullPath() => join(root, path);
     return FileSystemEntity.type(fullPath(), followLinks: false).then((type) {
       switch (type) {
-        case FileSystemEntityType.FILE:
+        case FileSystemEntityType.file:
           if (segments.current == null) {
             return new File(fullPath());
           }
           break;
 
-        case FileSystemEntityType.DIRECTORY:
+        case FileSystemEntityType.directory:
           String dirFullPath() => '${fullPath()}$separator';
           var current = segments.current;
           if (current == null) {
@@ -164,7 +164,7 @@ class VirtualDirectory {
           }
           break;
 
-        case FileSystemEntityType.LINK:
+        case FileSystemEntityType.link:
           if (followLinks) {
             return new Link(fullPath()).target().then((target) {
               String targetPath = normalize(target);
@@ -192,11 +192,11 @@ class VirtualDirectory {
    * some index file.
    *
    * In the request contains the [HttpStatus.IF_MODIFIED_SINCE] header,
-   * [serveFile] will send a [HttpStatus.NOT_MODIFIED] response if the file
+   * [serveFile] will send a [HttpStatus.nnotModified] response if the file
    * was not changed.
    *
    * Note that if it was unabled to read from [file], the [request]s response
-   * is closed with error-code [HttpStatus.NOT_FOUND].
+   * is closed with error-code [HttpStatus.notFound].
    */
   void serveFile(File file, HttpRequest request) {
     var response = request.response;
@@ -204,16 +204,16 @@ class VirtualDirectory {
     file.lastModified().then((lastModified) {
       if (request.headers.ifModifiedSince != null &&
           !lastModified.isAfter(request.headers.ifModifiedSince)) {
-        response.statusCode = HttpStatus.NOT_MODIFIED;
+        response.statusCode = HttpStatus.notModified;
         response.close();
         return null;
       }
 
-      response.headers.set(HttpHeaders.LAST_MODIFIED, lastModified);
-      response.headers.set(HttpHeaders.ACCEPT_RANGES, "bytes");
+      response.headers.set(HttpHeaders.lastModifiedHeader, lastModified);
+      response.headers.set(HttpHeaders.acceptRangesHeader, "bytes");
 
       return file.length().then((length) {
-        String range = request.headers.value(HttpHeaders.RANGE);
+        String range = request.headers.value(HttpHeaders.rangeHeader);
         if (range != null) {
           // We only support one range, where the standard support several.
           Match matches = new RegExp(r"^bytes=(\d*)\-(\d*)$").firstMatch(range);
@@ -240,19 +240,20 @@ class VirtualDirectory {
 
               if (start >= length) {
                 response
-                  ..statusCode = HttpStatus.REQUESTED_RANGE_NOT_SATISFIABLE
+                  ..statusCode = HttpStatus.requestedRangeNotSatisfiable
                   ..close();
                 return;
               }
 
               // Override Content-Length with the actual bytes sent.
-              response.headers.set(HttpHeaders.CONTENT_LENGTH, end - start + 1);
+              response.headers
+                  .set(HttpHeaders.contentLengthHeader, end - start + 1);
 
               // Set 'Partial Content' status code.
               response
-                ..statusCode = HttpStatus.PARTIAL_CONTENT
-                ..headers.set(
-                    HttpHeaders.CONTENT_RANGE, 'bytes $start-$end/$length');
+                ..statusCode = HttpStatus.partialContent
+                ..headers.set(HttpHeaders.contentRangeHeader,
+                    'bytes $start-$end/$length');
 
               // Pipe the 'range' of the file.
               if (request.method == 'HEAD') {
@@ -270,7 +271,7 @@ class VirtualDirectory {
           }
         }
 
-        response.headers.set(HttpHeaders.CONTENT_LENGTH, length);
+        response.headers.set(HttpHeaders.contentLengthHeader, length);
         if (request.method == 'HEAD') {
           response.close();
         } else {
@@ -283,7 +284,7 @@ class VirtualDirectory {
         }
       });
     }).catchError((_) {
-      response.statusCode = HttpStatus.NOT_FOUND;
+      response.statusCode = HttpStatus.notFound;
       response.close();
     });
   }
@@ -297,14 +298,14 @@ class VirtualDirectory {
     dir.stat().then((stats) {
       if (request.headers.ifModifiedSince != null &&
           !stats.modified.isAfter(request.headers.ifModifiedSince)) {
-        response.statusCode = HttpStatus.NOT_MODIFIED;
+        response.statusCode = HttpStatus.notModified;
         response.close();
         return;
       }
 
       response.headers.contentType =
           new ContentType('text', 'html', parameters: {'charset': 'utf-8'});
-      response.headers.set(HttpHeaders.LAST_MODIFIED, stats.modified);
+      response.headers.set(HttpHeaders.lastModifiedHeader, stats.modified);
       var path = Uri.decodeComponent(request.uri.path);
       var encodedPath = new HtmlEscape().convert(path);
       var header =
@@ -323,7 +324,7 @@ http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
     <td>Size</td>
   </tr>
 ''';
-      var server = response.headers.value(HttpHeaders.SERVER);
+      var server = response.headers.value(HttpHeaders.serverHeader);
       if (server == null) server = "";
       var footer = '''</table>
 $server
@@ -393,7 +394,7 @@ $server
     var encodedReason = new HtmlEscape().convert(response.reasonPhrase);
     var encodedError = new HtmlEscape().convert(error.toString());
 
-    var server = response.headers.value(HttpHeaders.SERVER);
+    var server = response.headers.value(HttpHeaders.serverHeader);
     if (server == null) server = "";
     var page = '''<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
 http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">

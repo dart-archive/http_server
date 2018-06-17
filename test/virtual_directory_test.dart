@@ -28,7 +28,7 @@ void main() {
       var virDir = new VirtualDirectory(dir.path);
 
       return getStatusCodeForVirtDir(virDir, '/').then((result) {
-        expect(result, HttpStatus.NOT_FOUND);
+        expect(result, HttpStatus.notFound);
       });
     });
 
@@ -36,7 +36,7 @@ void main() {
       var virDir = new VirtualDirectory(pathos.join(dir.path + 'foo'));
 
       return getStatusCodeForVirtDir(virDir, '/').then((result) {
-        expect(result, HttpStatus.NOT_FOUND);
+        expect(result, HttpStatus.notFound);
       });
     });
   });
@@ -47,7 +47,7 @@ void main() {
         new File('${dir.path}/file')..createSync();
         var virDir = new VirtualDirectory(dir.path);
         return getStatusCodeForVirtDir(virDir, '/file').then((result) {
-          expect(result, HttpStatus.OK);
+          expect(result, HttpStatus.ok);
         });
       });
 
@@ -55,7 +55,7 @@ void main() {
         var virDir = new VirtualDirectory(dir.path);
 
         return getStatusCodeForVirtDir(virDir, '/file').then((result) {
-          expect(result, HttpStatus.NOT_FOUND);
+          expect(result, HttpStatus.notFound);
         });
       });
     });
@@ -66,7 +66,7 @@ void main() {
         new File('${dir2.path}/file')..createSync();
         var virDir = new VirtualDirectory(dir.path);
         return getStatusCodeForVirtDir(virDir, '/dir/file').then((result) {
-          expect(result, HttpStatus.OK);
+          expect(result, HttpStatus.ok);
         });
       });
 
@@ -76,7 +76,7 @@ void main() {
         var virDir = new VirtualDirectory(dir.path);
 
         return getStatusCodeForVirtDir(virDir, '/dir/file').then((result) {
-          expect(result, HttpStatus.NOT_FOUND);
+          expect(result, HttpStatus.notFound);
         });
       });
     });
@@ -291,7 +291,7 @@ void main() {
         };
 
         return getStatusCodeForVirtDir(virDir, '/path').then((result) {
-          expect(result, HttpStatus.OK);
+          expect(result, HttpStatus.ok);
         });
       });
 
@@ -304,14 +304,14 @@ void main() {
         };
 
         return getStatusCodeForVirtDir(virDir, '/path').then((result) {
-          expect(result, HttpStatus.OK);
+          expect(result, HttpStatus.ok);
         });
       });
 
       testVirtualDir('not-matching', (dir) {
         var virDir = new VirtualDirectory(dir.path, pathPrefix: '/path/');
         return getStatusCodeForVirtDir(virDir, '/').then((result) {
-          expect(result, HttpStatus.NOT_FOUND);
+          expect(result, HttpStatus.notFound);
         });
       });
     });
@@ -328,7 +328,7 @@ void main() {
           virDir.followLinks = true;
 
           return getStatusCodeForVirtDir(virDir, '/dir3/file').then((result) {
-            expect(result, HttpStatus.OK);
+            expect(result, HttpStatus.ok);
           });
         });
 
@@ -339,7 +339,7 @@ void main() {
           virDir.followLinks = true;
 
           return getStatusCodeForVirtDir(virDir, '/dir3/file').then((result) {
-            expect(result, HttpStatus.OK);
+            expect(result, HttpStatus.ok);
           });
         });
 
@@ -351,7 +351,7 @@ void main() {
             virDir.followLinks = true;
 
             return getStatusCodeForVirtDir(virDir, '/file2').then((result) {
-              expect(result, HttpStatus.NOT_FOUND);
+              expect(result, HttpStatus.notFound);
             });
           });
 
@@ -363,7 +363,7 @@ void main() {
             virDir.followLinks = true;
 
             return getStatusCodeForVirtDir(virDir, '/dir3/file').then((result) {
-              expect(result, HttpStatus.NOT_FOUND);
+              expect(result, HttpStatus.notFound);
             });
           });
         });
@@ -378,7 +378,7 @@ void main() {
           virDir.followLinks = false;
 
           return getStatusCodeForVirtDir(virDir, '/dir3/file').then((result) {
-            expect(result, HttpStatus.NOT_FOUND);
+            expect(result, HttpStatus.notFound);
           });
         });
       });
@@ -393,7 +393,7 @@ void main() {
             virDir.jailRoot = false;
 
             return getStatusCodeForVirtDir(virDir, '/file2').then((result) {
-              expect(result, HttpStatus.OK);
+              expect(result, HttpStatus.ok);
             });
           });
 
@@ -406,7 +406,7 @@ void main() {
             virDir.jailRoot = false;
 
             return getStatusCodeForVirtDir(virDir, '/file').then((result) {
-              expect(result, HttpStatus.OK);
+              expect(result, HttpStatus.ok);
             });
           });
         });
@@ -421,14 +421,14 @@ void main() {
         var virDir = new VirtualDirectory(dir.path);
 
         return getHeaders(virDir, '/file').then((headers) {
-          expect(headers.value(HttpHeaders.LAST_MODIFIED), isNotNull);
+          expect(headers.value(HttpHeaders.lastModifiedHeader), isNotNull);
           var lastModified =
-              HttpDate.parse(headers.value(HttpHeaders.LAST_MODIFIED));
+              HttpDate.parse(headers.value(HttpHeaders.lastModifiedHeader));
 
           return getStatusCodeForVirtDir(virDir, '/file',
               ifModifiedSince: lastModified);
         }).then((result) {
-          expect(result, HttpStatus.NOT_MODIFIED);
+          expect(result, HttpStatus.notModified);
         });
       });
 
@@ -437,9 +437,9 @@ void main() {
         var virDir = new VirtualDirectory(dir.path);
 
         return getHeaders(virDir, '/file').then((headers) {
-          expect(headers.value(HttpHeaders.LAST_MODIFIED), isNotNull);
+          expect(headers.value(HttpHeaders.lastModifiedHeader), isNotNull);
           var lastModified =
-              HttpDate.parse(headers.value(HttpHeaders.LAST_MODIFIED));
+              HttpDate.parse(headers.value(HttpHeaders.lastModifiedHeader));
 
           // Fake file changed by moving date back in time.
           lastModified = lastModified.subtract(const Duration(seconds: 10));
@@ -447,7 +447,7 @@ void main() {
           return getStatusCodeForVirtDir(virDir, '/file',
               ifModifiedSince: lastModified);
         }).then((result) {
-          expect(result, HttpStatus.OK);
+          expect(result, HttpStatus.ok);
         });
       });
     });
@@ -501,9 +501,10 @@ void main() {
           var content = result[0];
           var response = result[1];
           expect(content, expected);
-          expect(response.headers[HttpHeaders.CONTENT_RANGE][0], contentRange);
+          expect(response.headers[HttpHeaders.contentRangeHeader][0],
+              contentRange);
           expect(expected.length, response.headers.contentLength);
-          expect(response.statusCode, HttpStatus.PARTIAL_CONTENT);
+          expect(response.statusCode, HttpStatus.partialContent);
         }));
       }
 
@@ -527,7 +528,7 @@ void main() {
           [List<int> expected,
           String contentRange,
           bool expectContentRange = true,
-          int expectedStatusCode = HttpStatus.PARTIAL_CONTENT]) {
+          int expectedStatusCode = HttpStatus.partialContent]) {
         if (expected == null) {
           expected = fileContent.sublist(from, fileContent.length);
         }
@@ -542,10 +543,10 @@ void main() {
           var response = result[1];
           expect(content, expected);
           if (expectContentRange) {
-            expect(
-                response.headers[HttpHeaders.CONTENT_RANGE][0], contentRange);
+            expect(response.headers[HttpHeaders.contentRangeHeader][0],
+                contentRange);
           } else {
-            expect(response.headers[HttpHeaders.CONTENT_RANGE], null);
+            expect(response.headers[HttpHeaders.contentRangeHeader], null);
           }
           expect(response.statusCode, expectedStatusCode);
         }));
@@ -555,9 +556,9 @@ void main() {
         () => test(0),
         () => test(1),
         () => test(9),
-        () => test(10, fileContent, null, false, HttpStatus.OK),
-        () => test(11, fileContent, null, false, HttpStatus.OK),
-        () => test(1000, fileContent, null, false, HttpStatus.OK),
+        () => test(10, fileContent, null, false, HttpStatus.ok),
+        () => test(11, fileContent, null, false, HttpStatus.ok),
+        () => test(1000, fileContent, null, false, HttpStatus.ok),
       ], (f) => f().then(expectAsync1((_) {})));
     });
 
@@ -578,8 +579,9 @@ void main() {
           var content = result[0];
           var response = result[1];
           expect(content, expected);
-          expect(response.headers[HttpHeaders.CONTENT_RANGE][0], contentRange);
-          expect(response.statusCode, HttpStatus.PARTIAL_CONTENT);
+          expect(response.headers[HttpHeaders.contentRangeHeader][0],
+              contentRange);
+          expect(response.statusCode, HttpStatus.partialContent);
         }));
       }
 
@@ -601,9 +603,8 @@ void main() {
           var content = result[0];
           var response = result[1];
           expect(content.length, 0);
-          expect(response.headers[HttpHeaders.CONTENT_RANGE], isNull);
-          expect(
-              response.statusCode, HttpStatus.REQUESTED_RANGE_NOT_SATISFIABLE);
+          expect(response.headers[HttpHeaders.contentRangeHeader], isNull);
+          expect(response.statusCode, HttpStatus.requestedRangeNotSatisfiable);
         }));
       }
 
@@ -620,8 +621,8 @@ void main() {
           var content = result[0];
           var response = result[1];
           expect(content, fileContent);
-          expect(response.headers[HttpHeaders.CONTENT_RANGE], isNull);
-          expect(response.statusCode, HttpStatus.OK);
+          expect(response.headers[HttpHeaders.contentRangeHeader], isNull);
+          expect(response.statusCode, HttpStatus.ok);
         }));
       }
 
@@ -664,7 +665,7 @@ void main() {
       virDir.allowDirectoryListing = true;
 
       return getStatusCodeForVirtDir(virDir, '/../').then((result) {
-        expect(result, HttpStatus.NOT_FOUND);
+        expect(result, HttpStatus.notFound);
       });
     });
 
@@ -674,7 +675,7 @@ void main() {
       virDir.allowDirectoryListing = true;
 
       return getStatusCodeForVirtDir(virDir, '/dir/../../').then((result) {
-        expect(result, HttpStatus.NOT_FOUND);
+        expect(result, HttpStatus.notFound);
       });
     });
   },
@@ -687,7 +688,7 @@ void main() {
       var virDir = new VirtualDirectory(dir.path);
 
       return getStatusCodeForVirtDir(virDir, '/my file').then((result) {
-        expect(result, HttpStatus.OK);
+        expect(result, HttpStatus.ok);
       });
     });
 
@@ -696,7 +697,7 @@ void main() {
       var virDir = new VirtualDirectory(dir.path);
 
       return getStatusCodeForVirtDir(virDir, '/my%20file').then((result) {
-        expect(result, HttpStatus.NOT_FOUND);
+        expect(result, HttpStatus.notFound);
       });
     });
 
@@ -709,7 +710,7 @@ void main() {
 
       return getStatusCodeForVirtDir(virDir, '/a%2fb/c', rawPath: true)
           .then((result) {
-        expect(result, HttpStatus.NOT_FOUND);
+        expect(result, HttpStatus.notFound);
       });
     });
 
@@ -719,21 +720,21 @@ void main() {
 
       return getStatusCodeForVirtDir(virDir, '/%00', rawPath: true)
           .then((result) {
-        expect(result, HttpStatus.NOT_FOUND);
+        expect(result, HttpStatus.notFound);
       });
     });
 
     group('broken', () {
-      _testEncoding('..', HttpStatus.NOT_FOUND, false);
+      _testEncoding('..', HttpStatus.notFound, false);
     },
         skip: 'Broken. Likely due to dart:core Uri changes.'
             'See https://github.com/dart-lang/http_server/issues/40');
 
-    _testEncoding('%2e%2e', HttpStatus.OK);
-    _testEncoding('%252e%252e', HttpStatus.OK);
-    _testEncoding('/', HttpStatus.OK, false);
-    _testEncoding('%2f', HttpStatus.NOT_FOUND, false);
-    _testEncoding('%2f', HttpStatus.OK, true);
+    _testEncoding('%2e%2e', HttpStatus.ok);
+    _testEncoding('%252e%252e', HttpStatus.ok);
+    _testEncoding('/', HttpStatus.ok, false);
+    _testEncoding('%2f', HttpStatus.notFound, false);
+    _testEncoding('%2f', HttpStatus.ok, true);
   });
 
   group('serve-file', () {
