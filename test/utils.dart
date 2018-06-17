@@ -263,7 +263,7 @@ Future<List<int>> _getAsBytes(int port, String path, int from, int to) {
         _addRangeHeader(request, from, to);
         return request.close();
       })
-      .then((response) => response.fold([], (p, e) => p..addAll(e)))
+      .then((response) => response.fold<List<int>>([], (p, e) => p..addAll(e)))
       .whenComplete(() => client.close());
 }
 
@@ -306,7 +306,7 @@ void setupSecure() {
   var currentFileUri =
       (reflect(setupSecure) as ClosureMirror).function.location.sourceUri;
 
-  String localFile(path) => currentFileUri.resolve(path).toFilePath();
+  String localFile(String path) => currentFileUri.resolve(path).toFilePath();
 
   serverContext = new SecurityContext()
     ..useCertificateChain(localFile('certificates/server_chain.pem'))

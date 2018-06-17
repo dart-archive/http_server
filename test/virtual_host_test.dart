@@ -11,9 +11,7 @@ import "package:http_server/http_server.dart";
 import 'utils.dart';
 
 void main() {
-  setUpAll(() {
-    setupSecure();
-  });
+  setUpAll(setupSecure);
 
   test('empty-host', () {
     expect(

@@ -15,7 +15,7 @@ class MockHttpHeaders implements HttpHeaders {
       int.parse(_headers[HttpHeaders.contentLengthHeader][0]);
 
   DateTime get ifModifiedSince {
-    List<String> values = _headers[HttpHeaders.ifModifiedSinceHeader];
+    var values = _headers[HttpHeaders.ifModifiedSinceHeader];
     if (values != null) {
       try {
         return HttpDate.parse(values[0]);
@@ -26,9 +26,9 @@ class MockHttpHeaders implements HttpHeaders {
     return null;
   }
 
-  void set ifModifiedSince(DateTime ifModifiedSince) {
+  set ifModifiedSince(DateTime ifModifiedSince) {
     // Format "ifModifiedSince" header with date in Greenwich Mean Time (GMT).
-    String formatted = HttpDate.format(ifModifiedSince.toUtc());
+    var formatted = HttpDate.format(ifModifiedSince.toUtc());
     _set(HttpHeaders.ifModifiedSinceHeader, formatted);
   }
 
@@ -42,7 +42,7 @@ class MockHttpHeaders implements HttpHeaders {
 
   String value(String name) {
     name = name.toLowerCase();
-    List<String> values = _headers[name];
+    var values = _headers[name];
     if (values == null) return null;
     if (values.length > 1) {
       throw new HttpException("More than one value for header $name");
@@ -69,7 +69,7 @@ class MockHttpHeaders implements HttpHeaders {
 
   void _addAll(String name, value) {
     if (value is List) {
-      for (int i = 0; i < value.length; i++) {
+      for (var i = 0; i < value.length; i++) {
         _add(name, value[i]);
       }
     } else {
@@ -78,9 +78,9 @@ class MockHttpHeaders implements HttpHeaders {
   }
 
   void _addValue(String name, Object value) {
-    List<String> values = _headers[name];
+    var values = _headers[name];
     if (values == null) {
-      values = new List<String>();
+      values = <String>[];
       _headers[name] = values;
     }
     if (value is DateTime) {
@@ -92,7 +92,7 @@ class MockHttpHeaders implements HttpHeaders {
 
   void _set(String name, String value) {
     assert(name == name.toLowerCase());
-    List<String> values = new List<String>();
+    var values = <String>[];
     _headers[name] = values;
     values.add(value);
   }
@@ -135,7 +135,7 @@ class MockHttpRequest implements HttpRequest {
 class MockHttpResponse implements HttpResponse {
   final HttpHeaders headers = new MockHttpHeaders();
   final Completer _completer = new Completer();
-  final List<int> _buffer = new List<int>();
+  final List<int> _buffer = <int>[];
   String _reasonPhrase;
   Future _doneFuture;
 
@@ -152,7 +152,7 @@ class MockHttpResponse implements HttpResponse {
 
   String get reasonPhrase => _findReasonPhrase(statusCode);
 
-  void set reasonPhrase(String value) {
+  set reasonPhrase(String value) {
     _reasonPhrase = value;
   }
 
@@ -172,7 +172,7 @@ class MockHttpResponse implements HttpResponse {
   }
 
   Future redirect(Uri location, {int status: HttpStatus.movedPermanently}) {
-    this.statusCode = status;
+    statusCode = status;
     headers.set(HttpHeaders.locationHeader, location.toString());
     return close();
   }

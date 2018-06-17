@@ -2,12 +2,13 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
+import 'dart:async';
+import 'dart:convert';
+import 'dart:io';
+
 import "package:http_server/http_server.dart";
 import "package:mime/mime.dart";
 import "package:test/test.dart";
-import 'dart:async';
-import 'dart:io';
-import 'dart:convert';
 
 // Representation of a form field from a multipart/form-data form POST body.
 class FormField {
@@ -21,41 +22,52 @@ class FormField {
   // Filename if specified in Content-Disposition.
   final String filename;
 
-  FormField(String this.name, this.value,
-      {String this.contentType, String this.filename});
+  FormField(this.name, this.value, {this.contentType, this.filename});
 
-  bool operator ==(other) {
-    if (value.length != other.value.length) return false;
-    for (int i = 0; i < value.length; i++) {
-      if (value[i] != other.value[i]) {
-        return false;
-      }
-    }
-    return name == other.name &&
-        contentType == other.contentType &&
-        filename == other.filename;
-  }
+  bool operator ==(other) =>
+      other is FormField &&
+      _valuesEqual(value, other.value) &&
+      name == other.name &&
+      contentType == other.contentType &&
+      filename == other.filename;
 
   int get hashCode => name.hashCode;
 
   String toString() {
     return "FormField('$name', '$value', '$contentType', '$filename')";
   }
+
+  static bool _valuesEqual(a, b) {
+    if (a is String && b is String) {
+      return a == b;
+    } else if (a is List && b is List) {
+      if (a.length != b.length) {
+        return false;
+      }
+      for (var i = 0; i < a.length; i++) {
+        if (a[i] != b[i]) {
+          return false;
+        }
+      }
+      return true;
+    }
+    return false;
+  }
 }
 
 Future postDataTest(List<int> message, String contentType, String boundary,
     List<FormField> expectedFields,
-    {defaultEncoding: latin1}) async {
+    {Encoding defaultEncoding: latin1}) async {
   var addr = (await InternetAddress.lookup("localhost"))[0];
   HttpServer.bind(addr, 0).then((server) {
     server.listen((request) {
-      String boundary = request.headers.contentType.parameters['boundary'];
+      var boundary = request.headers.contentType.parameters['boundary'];
       request
           .transform(new MimeMultipartTransformer(boundary))
           .map((part) => HttpMultipartFormData.parse(part,
               defaultEncoding: defaultEncoding))
           .map((multipart) {
-            var future;
+            Future future;
             if (multipart.isText) {
               future = multipart.join();
             } else {
@@ -74,7 +86,7 @@ Future postDataTest(List<int> message, String contentType, String boundary,
             });
           })
           .toList()
-          .then((values) => Future.wait(values as List<Future>))
+          .then(Future.wait)
           .then((fields) {
             expect(fields, equals(expectedFields));
             request.response.close().then((_) => server.close());

@@ -25,10 +25,10 @@ class HttpMultipartFormDataImpl extends Stream
   Stream _stream;
 
   HttpMultipartFormDataImpl(
-      ContentType this.contentType,
-      HeaderValue this.contentDisposition,
-      HeaderValue this.contentTransferEncoding,
-      MimeMultipart this._mimeMultipart,
+      this.contentType,
+      this.contentDisposition,
+      this.contentTransferEncoding,
+      this._mimeMultipart,
       Encoding defaultEncoding) {
     _stream = _mimeMultipart;
     if (contentTransferEncoding != null) {
@@ -45,7 +45,7 @@ class HttpMultipartFormDataImpl extends Stream
       if (contentType != null && contentType.charset != null) {
         encoding = Encoding.getByName(contentType.charset);
       }
-      if (encoding == null) encoding = defaultEncoding;
+      encoding ??= defaultEncoding;
       _stream = _stream.transform(encoding.decoder);
     }
   }
@@ -55,11 +55,11 @@ class HttpMultipartFormDataImpl extends Stream
 
   static HttpMultipartFormData parse(
       MimeMultipart multipart, Encoding defaultEncoding) {
-    var type;
-    var encoding;
-    var disposition;
-    var remaining = new Map<String, String>();
-    for (String key in multipart.headers.keys) {
+    ContentType type;
+    HeaderValue encoding;
+    HeaderValue disposition;
+    var remaining = <String, String>{};
+    for (var key in multipart.headers.keys) {
       switch (key) {
         case 'content-type':
           type = ContentType.parse(multipart.headers[key]);
@@ -80,7 +80,7 @@ class HttpMultipartFormDataImpl extends Stream
       }
     }
     if (disposition == null) {
-      throw new HttpException(
+      throw const HttpException(
           "Mime Multipart doesn't contain a Content-Disposition header value");
     }
     return new HttpMultipartFormDataImpl(

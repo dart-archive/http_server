@@ -121,7 +121,7 @@ class VirtualDirectory {
    * [callback] will be called with the [Directory] to be listed and the
    * [HttpRequest].
    */
-  void set directoryHandler(void callback(Directory dir, HttpRequest request)) {
+  set directoryHandler(void callback(Directory dir, HttpRequest request)) {
     _dirCallback = callback;
   }
 
@@ -129,7 +129,7 @@ class VirtualDirectory {
    * Set the [callback] to override the error page handler. When [callback] is
    * invoked, the `statusCode` property of the response is set.
    */
-  void set errorPageHandler(void callback(HttpRequest request)) {
+  set errorPageHandler(void callback(HttpRequest request)) {
     _errorCallback = callback;
   }
 
@@ -155,7 +155,7 @@ class VirtualDirectory {
             if (path == '.') return new Directory(dirFullPath());
             return const _DirectoryRedirect();
           }
-          bool hasNext = segments.moveNext();
+          var hasNext = segments.moveNext();
           if (!hasNext && current == "") {
             return new Directory(dirFullPath());
           } else {
@@ -167,7 +167,7 @@ class VirtualDirectory {
         case FileSystemEntityType.link:
           if (followLinks) {
             return new Link(fullPath()).target().then((target) {
-              String targetPath = normalize(target);
+              var targetPath = normalize(target);
               if (isAbsolute(targetPath)) {
                 // If we jail to root, the path can never be absolute.
                 if (jailRoot) return null;
@@ -191,8 +191,8 @@ class VirtualDirectory {
    * This is usefull when e.g. overriding [directoryHandler] to redirect to
    * some index file.
    *
-   * In the request contains the [HttpStatus.IF_MODIFIED_SINCE] header,
-   * [serveFile] will send a [HttpStatus.nnotModified] response if the file
+   * In the request contains the [HttpStatus.ifModifiedSince] header,
+   * [serveFile] will send a [HttpStatus.notModified] response if the file
    * was not changed.
    *
    * Note that if it was unabled to read from [file], the [request]s response
@@ -213,10 +213,10 @@ class VirtualDirectory {
       response.headers.set(HttpHeaders.acceptRangesHeader, "bytes");
 
       return file.length().then((length) {
-        String range = request.headers.value(HttpHeaders.rangeHeader);
+        var range = request.headers.value(HttpHeaders.rangeHeader);
         if (range != null) {
           // We only support one range, where the standard support several.
-          Match matches = new RegExp(r"^bytes=(\d*)\-(\d*)$").firstMatch(range);
+          var matches = new RegExp(r"^bytes=(\d*)\-(\d*)$").firstMatch(range);
           // If the range header have the right format, handle it.
           if (matches != null &&
               (matches[1].isNotEmpty || matches[2].isNotEmpty)) {
@@ -307,7 +307,7 @@ class VirtualDirectory {
           new ContentType('text', 'html', parameters: {'charset': 'utf-8'});
       response.headers.set(HttpHeaders.lastModifiedHeader, stats.modified);
       var path = Uri.decodeComponent(request.uri.path);
-      var encodedPath = new HtmlEscape().convert(path);
+      var encodedPath = const HtmlEscape().convert(path);
       var header =
           '''<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
 http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
@@ -325,7 +325,7 @@ http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
   </tr>
 ''';
       var server = response.headers.value(HttpHeaders.serverHeader);
-      if (server == null) server = "";
+      server ??= "";
       var footer = '''</table>
 $server
 </body>
@@ -335,17 +335,17 @@ $server
       response.write(header);
 
       void add(String name, String modified, var size, bool folder) {
-        if (size == null) size = "-";
-        if (modified == null) modified = "";
-        var encodedSize = new HtmlEscape().convert(size.toString());
-        var encodedModified = new HtmlEscape().convert(modified);
-        var encodedLink = new HtmlEscape(HtmlEscapeMode.attribute)
+        size ??= "-";
+        modified ??= "";
+        var encodedSize = const HtmlEscape().convert(size.toString());
+        var encodedModified = const HtmlEscape().convert(modified);
+        var encodedLink = const HtmlEscape(HtmlEscapeMode.attribute)
             .convert(Uri.encodeComponent(name));
         if (folder) {
           encodedLink += '/';
           name += '/';
         }
-        var encodedName = new HtmlEscape().convert(name);
+        var encodedName = const HtmlEscape().convert(name);
 
         var entry = '''  <tr>
     <td><a href="$encodedLink">$encodedName</a></td>
@@ -390,12 +390,12 @@ $server
         new ContentType('text', 'html', parameters: {'charset': 'utf-8'});
     // Default error page.
     var path = Uri.decodeComponent(request.uri.path);
-    var encodedPath = new HtmlEscape().convert(path);
-    var encodedReason = new HtmlEscape().convert(response.reasonPhrase);
-    var encodedError = new HtmlEscape().convert(error.toString());
+    var encodedPath = const HtmlEscape().convert(path);
+    var encodedReason = const HtmlEscape().convert(response.reasonPhrase);
+    var encodedError = const HtmlEscape().convert(error.toString());
 
     var server = response.headers.value(HttpHeaders.serverHeader);
-    if (server == null) server = "";
+    server ??= "";
     var page = '''<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
 http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
@@ -417,7 +417,7 @@ class _VirtualDirectoryFileStream extends StreamConsumer<List<int>> {
   final String path;
   List<int> buffer = [];
 
-  _VirtualDirectoryFileStream(HttpResponse this.response, String this.path);
+  _VirtualDirectoryFileStream(this.response, this.path);
 
   Future addStream(Stream<List<int>> stream) {
     stream.listen((data) {
@@ -425,7 +425,7 @@ class _VirtualDirectoryFileStream extends StreamConsumer<List<int>> {
         response.add(data);
         return;
       }
-      if (buffer.length == 0) {
+      if (buffer.isEmpty) {
         if (data.length >= defaultMagicNumbersMaxLength) {
           setMimeType(data);
           response.add(data);
@@ -443,7 +443,7 @@ class _VirtualDirectoryFileStream extends StreamConsumer<List<int>> {
       }
     }, onDone: () {
       if (buffer != null) {
-        if (buffer.length == 0) {
+        if (buffer.isEmpty) {
           setMimeType(null);
         } else {
           setMimeType(buffer);

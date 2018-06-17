@@ -97,7 +97,7 @@ import 'http_body_impl.dart';
  */
 class HttpBodyHandler
     extends StreamTransformerBase<HttpRequest, HttpRequestBody> {
-  var _transformer;
+  HttpBodyHandlerTransformer _transformer;
 
   /**
    * Create a new [HttpBodyHandler] to be used with a [Stream]<[HttpRequest]>,
@@ -113,7 +113,7 @@ class HttpBodyHandler
 
   /**
    * Process and parse an incoming [HttpRequest]. The returned [HttpRequestBody]
-   * contains a [response] field for accessing the [HttpResponse].
+   * contains a `response` field for accessing the [HttpResponse].
    *
    * See [HttpBodyHandler] constructor for more info on [defaultEncoding].
    */
@@ -195,7 +195,7 @@ abstract class HttpBodyFileUpload {
 
   /**
    * The [ContentType] of the uploaded file. For 'text/\*' and
-   * 'application/json' the [data] field will a String.
+   * 'application/json' the [content] field will a String.
    */
   ContentType get contentType;
 

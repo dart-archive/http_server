@@ -76,7 +76,7 @@ class HttpBodyHandlerImpl {
 
   static Future<HttpBody> process(
       Stream<List<int>> stream, HttpHeaders headers, Encoding defaultEncoding) {
-    ContentType contentType = headers.contentType;
+    var contentType = headers.contentType;
 
     Future<HttpBody> asBinary() {
       return stream
@@ -85,10 +85,10 @@ class HttpBodyHandlerImpl {
     }
 
     Future<HttpBody> asText(Encoding defaultEncoding) {
-      var encoding;
+      Encoding encoding;
       var charset = contentType.charset;
       if (charset != null) encoding = Encoding.getByName(charset);
-      if (encoding == null) encoding = defaultEncoding;
+      encoding ??= defaultEncoding;
       return stream
           .transform(encoding.decoder)
           .fold(new StringBuffer(), (buffer, data) => buffer..write(data))
@@ -102,7 +102,7 @@ class HttpBodyHandlerImpl {
           .map((part) => HttpMultipartFormData.parse(part,
               defaultEncoding: defaultEncoding))
           .map((multipart) {
-            var future;
+            Future future;
             if (multipart.isText) {
               future = multipart
                   .fold(new StringBuffer(), (b, s) => b..write(s))
@@ -125,9 +125,9 @@ class HttpBodyHandlerImpl {
           .fold([], (l, f) => l..add(f))
           .then((values) => Future.wait(values as List<Future>))
           .then((parts) {
-            Map<String, dynamic> map = new Map<String, dynamic>();
+            var map = <String, dynamic>{};
             for (var part in parts) {
-              map[part[0]] = part[1]; // Override existing entries.
+              map[part[0] as String] = part[1]; // Override existing entries.
             }
             return new _HttpBody('form', map);
           });
