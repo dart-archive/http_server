@@ -21,7 +21,7 @@ void main() {
           new VirtualHost(server);
           return getStatusCode(server.port, '/').whenComplete(server.close);
         }),
-        completion(equals(HttpStatus.FORBIDDEN)));
+        completion(equals(HttpStatus.forbidden)));
   });
 
   test('empty-host-unhandled', () {
@@ -33,7 +33,7 @@ void main() {
           }), completion(isNull));
           return getStatusCode(server.port, '/').whenComplete(server.close);
         }),
-        completion(equals(HttpStatus.OK)));
+        completion(equals(HttpStatus.ok)));
   });
 
   test('single-host', () {
@@ -48,7 +48,7 @@ void main() {
           return getStatusCode(server.port, '/', host: 'my.host.com')
               .whenComplete(server.close);
         }),
-        completion(equals(HttpStatus.OK)));
+        completion(equals(HttpStatus.ok)));
   });
 
   test('multiple-host', () {
@@ -76,7 +76,7 @@ void main() {
             getStatusCode(server.port, '/', host: 'my.host3.com')
           ]).whenComplete(server.close);
         }),
-        completion(equals([HttpStatus.OK, HttpStatus.OK, HttpStatus.OK])));
+        completion(equals([HttpStatus.ok, HttpStatus.ok, HttpStatus.ok])));
   });
 
   test('multiple-source-https', () {
@@ -97,7 +97,7 @@ void main() {
                 host: 'myhost2.com', secure: true)
           ]).whenComplete(() => servers.forEach((s) => s.close()));
         }),
-        completion(equals([HttpStatus.OK, HttpStatus.OK])));
+        completion(equals([HttpStatus.ok, HttpStatus.ok])));
   });
 
   group('domain', () {
@@ -126,7 +126,7 @@ void main() {
               getStatusCode(server.port, '/', host: 'my3.host.com')
             ]).whenComplete(server.close);
           }),
-          completion(equals([HttpStatus.OK, HttpStatus.OK, HttpStatus.OK])));
+          completion(equals([HttpStatus.ok, HttpStatus.ok, HttpStatus.ok])));
     });
 
     test('wildcard-sub-domain', () {
@@ -154,7 +154,7 @@ void main() {
               getStatusCode(server.port, '/', host: 'my.host3.com')
             ]).whenComplete(server.close);
           }),
-          completion(equals([HttpStatus.OK, HttpStatus.OK, HttpStatus.OK])));
+          completion(equals([HttpStatus.ok, HttpStatus.ok, HttpStatus.ok])));
     });
 
     test('mix-sub-domain', () {
@@ -182,7 +182,7 @@ void main() {
               getStatusCode(server.port, '/', host: 'my3.host.com')
             ]).whenComplete(server.close);
           }),
-          completion(equals([HttpStatus.OK, HttpStatus.OK, HttpStatus.OK])));
+          completion(equals([HttpStatus.ok, HttpStatus.ok, HttpStatus.ok])));
     });
 
     test('wildcard', () {
@@ -210,7 +210,7 @@ void main() {
               getStatusCode(server.port, '/', host: 'long.sub.of.host.com')
             ]).whenComplete(server.close);
           }),
-          completion(equals([HttpStatus.OK, HttpStatus.OK, HttpStatus.OK])));
+          completion(equals([HttpStatus.ok, HttpStatus.ok, HttpStatus.ok])));
     });
 
     test('duplicate-domain', () {

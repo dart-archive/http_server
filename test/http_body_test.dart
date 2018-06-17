@@ -127,7 +127,7 @@ void testHttpServerRequestBody() {
         return request.close();
       }).then((response) {
         if (shouldFail) {
-          expect(response.statusCode, equals(HttpStatus.BAD_REQUEST));
+          expect(response.statusCode, equals(HttpStatus.badRequest));
         }
         return response.drain();
       }).whenComplete(() {

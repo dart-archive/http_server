@@ -62,7 +62,7 @@ class HttpBodyHandlerImpl {
     return process(request, request.headers, defaultEncoding)
         .then((body) => new _HttpRequestBody(request, body), onError: (error) {
       // Try to send BAD_REQUEST response.
-      request.response.statusCode = HttpStatus.BAD_REQUEST;
+      request.response.statusCode = HttpStatus.badRequest;
       request.response.close();
       throw error;
     });
