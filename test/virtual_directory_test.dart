@@ -33,7 +33,7 @@ void main() {
     });
 
     testVirtualDir('dir-not-exists', (dir) {
-      var virDir = new VirtualDirectory(pathos.join(dir.path + 'foo'));
+      var virDir = new VirtualDirectory(pathos.join('${dir.path}foo'));
 
       return getStatusCodeForVirtDir(virDir, '/').then((result) {
         expect(result, HttpStatus.notFound);
@@ -95,7 +95,7 @@ void main() {
 
       testVirtualDir('files', (dir) {
         var virDir = new VirtualDirectory(dir.path);
-        for (int i = 0; i < 10; i++) {
+        for (var i = 0; i < 10; i++) {
           new File('${dir.path}/$i').createSync();
         }
         virDir.allowDirectoryListing = true;
@@ -117,7 +117,7 @@ void main() {
 
       testVirtualDir('dirs', (dir) {
         var virDir = new VirtualDirectory(dir.path);
-        for (int i = 0; i < 10; i++) {
+        for (var i = 0; i < 10; i++) {
           new Directory('${dir.path}/$i').createSync();
         }
         virDir.allowDirectoryListing = true;
@@ -480,9 +480,9 @@ void main() {
 
   group('range', () {
     var fileContent = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
-    var virDir;
+    VirtualDirectory virDir;
 
-    prepare(dir) {
+    void prepare(Directory dir) {
       new File('${dir.path}/file').writeAsBytesSync(fileContent);
       virDir = new VirtualDirectory(dir.path);
     }
@@ -490,12 +490,8 @@ void main() {
     testVirtualDir('range', (dir) {
       prepare(dir);
       Future test(int from, int to, [List<int> expected, String contentRange]) {
-        if (expected == null) {
-          expected = fileContent.sublist(from, to + 1);
-        }
-        if (contentRange == null) {
-          contentRange = 'bytes $from-$to/${fileContent.length}';
-        }
+        expected ??= fileContent.sublist(from, to + 1);
+        contentRange ??= 'bytes $from-$to/${fileContent.length}';
         return getContentAndResponse(virDir, '/file', from: from, to: to)
             .then(expectAsync1((result) {
           var content = result[0];
@@ -529,11 +525,9 @@ void main() {
           String contentRange,
           bool expectContentRange = true,
           int expectedStatusCode = HttpStatus.partialContent]) {
-        if (expected == null) {
-          expected = fileContent.sublist(from, fileContent.length);
-        }
+        expected ??= fileContent.sublist(from, fileContent.length);
         if (contentRange == null && expectContentRange) {
-          contentRange = 'bytes ${from}-'
+          contentRange = 'bytes $from-'
               '${fileContent.length - 1}/'
               '${fileContent.length}';
         }
@@ -565,15 +559,11 @@ void main() {
     testVirtualDir('suffix-range', (dir) {
       prepare(dir);
       Future test(int to, [List<int> expected, String contentRange]) {
-        if (expected == null) {
-          expected =
-              fileContent.sublist(fileContent.length - to, fileContent.length);
-        }
-        if (contentRange == null) {
-          contentRange = 'bytes ${fileContent.length - to}-'
-              '${fileContent.length - 1}/'
-              '${fileContent.length}';
-        }
+        expected ??=
+            fileContent.sublist(fileContent.length - to, fileContent.length);
+        contentRange ??= 'bytes ${fileContent.length - to}-'
+            '${fileContent.length - 1}/'
+            '${fileContent.length}';
         return getContentAndResponse(virDir, '/file', to: to)
             .then(expectAsync1((result) {
           var content = result[0];

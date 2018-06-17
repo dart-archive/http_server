@@ -63,9 +63,8 @@ class _VirtualHost implements VirtualHost {
   StreamController<HttpRequest> _unhandledController;
 
   Stream<HttpRequest> get unhandled {
-    if (_unhandledController == null) {
-      _unhandledController = new StreamController<HttpRequest>();
-    }
+    _unhandledController ??= new StreamController<HttpRequest>();
+
     return _unhandledController.stream;
   }
 
@@ -82,7 +81,7 @@ class _VirtualHost implements VirtualHost {
       }
       var domains = host.split('.');
       var current = _topDomain;
-      var any;
+      StreamController any;
       for (var i = domains.length - 1; i >= 0; i--) {
         if (current.any != null) any = current.any;
         if (i == 0) {

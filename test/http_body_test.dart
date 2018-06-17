@@ -2,8 +2,8 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
-import 'dart:io';
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:http_server/http_server.dart';
 import 'package:test/test.dart';
@@ -111,7 +111,7 @@ void testHttpServerRequestBody() {
             break;
 
           default:
-            throw "bad body type";
+            throw new StateError("bad body type");
         }
         body.request.response.close();
       }, onError: (error) {
