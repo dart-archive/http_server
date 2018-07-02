@@ -37,8 +37,7 @@ class _HttpBodyHandlerTransformerSink implements EventSink<HttpRequest> {
 
   void add(HttpRequest request) {
     _pending++;
-    HttpBodyHandlerImpl
-        .processRequest(request, _defaultEncoding)
+    HttpBodyHandlerImpl.processRequest(request, _defaultEncoding)
         .then(_outSink.add, onError: _outSink.addError)
         .whenComplete(() {
       _pending--;
