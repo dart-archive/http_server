@@ -1,3 +1,7 @@
+# 0.9.8
+
+* Updates to support Dart 2 constants.
+
 # 0.9.7
 
 * Updates to support Dart 2.0 core library changes (wave
