@@ -8,7 +8,7 @@ import 'dart:io';
 import 'package:http_server/http_server.dart';
 import 'package:test/test.dart';
 
-void testHttpClientResponseBody() {
+void _testHttpClientResponseBody() {
   void test(
       String mimeType, List<int> content, dynamic expectedBody, String type,
       [bool shouldFail = false]) {
@@ -41,9 +41,9 @@ void testHttpClientResponseBody() {
         }
       }, onError: (error) {
         if (!shouldFail) throw error;
-      }).whenComplete(() {
+      }).whenComplete(() async {
         client.close();
-        server.close();
+        await server.close();
       });
     });
   }
@@ -60,7 +60,7 @@ void testHttpClientResponseBody() {
   test("application/json", '{ bad json }'.codeUnits, null, "json", true);
 }
 
-void testHttpServerRequestBody() {
+void _testHttpServerRequestBody() {
   void test(
       String mimeType, List<int> content, dynamic expectedBody, String type,
       {bool shouldFail: false, Encoding defaultEncoding: utf8}) {
@@ -130,9 +130,9 @@ void testHttpServerRequestBody() {
           expect(response.statusCode, equals(HttpStatus.badRequest));
         }
         return response.drain();
-      }).whenComplete(() {
+      }).whenComplete(() async {
         client.close();
-        server.close();
+        await server.close();
       }).catchError((e) {
         if (!shouldFail) throw e;
       });
@@ -289,6 +289,6 @@ File content\r
 }
 
 void main() {
-  testHttpClientResponseBody();
-  testHttpServerRequestBody();
+  test('client response body', _testHttpClientResponseBody);
+  test('server request body', _testHttpServerRequestBody);
 }
