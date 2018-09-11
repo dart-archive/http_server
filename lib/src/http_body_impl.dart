@@ -121,8 +121,8 @@ class HttpBodyHandlerImpl {
               return [multipart.contentDisposition.parameters['name'], data];
             });
           })
-          .fold([], (l, f) => l..add(f))
-          .then((values) => Future.wait(values as List<Future>))
+          .fold(<Future>[], (l, f) => l..add(f))
+          .then((values) => Future.wait(values))
           .then((parts) {
             var map = <String, dynamic>{};
             for (var part in parts) {
