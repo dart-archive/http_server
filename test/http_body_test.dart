@@ -21,7 +21,7 @@ void _testHttpClientResponseBody() {
         });
       });
 
-      var client = new HttpClient();
+      var client = HttpClient();
       client
           .get("localhost", server.port, "/")
           .then((request) => request.close())
@@ -63,10 +63,10 @@ void _testHttpClientResponseBody() {
 void _testHttpServerRequestBody() {
   void test(
       String mimeType, List<int> content, dynamic expectedBody, String type,
-      {bool shouldFail: false, Encoding defaultEncoding: utf8}) {
+      {bool shouldFail = false, Encoding defaultEncoding = utf8}) {
     HttpServer.bind("localhost", 0).then((server) {
       server
-          .transform(new HttpBodyHandler(defaultEncoding: defaultEncoding))
+          .transform(HttpBodyHandler(defaultEncoding: defaultEncoding))
           .listen((body) {
         if (shouldFail) return;
         expect(shouldFail, isFalse);
@@ -111,14 +111,14 @@ void _testHttpServerRequestBody() {
             break;
 
           default:
-            throw new StateError("bad body type");
+            throw StateError("bad body type");
         }
         body.request.response.close();
       }, onError: (error) {
         if (!shouldFail) throw error;
       });
 
-      var client = new HttpClient();
+      var client = HttpClient();
       client.post("localhost", server.port, "/").then((request) {
         if (mimeType != null) {
           request.headers.contentType = ContentType.parse(mimeType);

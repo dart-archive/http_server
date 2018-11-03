@@ -13,8 +13,8 @@ import 'utils.dart';
 
 void _testEncoding(name, expected, [bool create = true]) {
   testVirtualDir('encode-$name', (dir) async {
-    if (create) new File('${dir.path}/$name').createSync();
-    var virDir = new VirtualDirectory(dir.path);
+    if (create) File('${dir.path}/$name').createSync();
+    var virDir = VirtualDirectory(dir.path);
     virDir.allowDirectoryListing = true;
 
     var result = await getStatusCodeForVirtDir(virDir, '/$name');
@@ -25,7 +25,7 @@ void _testEncoding(name, expected, [bool create = true]) {
 void main() {
   group('serve-root', () {
     testVirtualDir('dir-exists', (dir) {
-      var virDir = new VirtualDirectory(dir.path);
+      var virDir = VirtualDirectory(dir.path);
 
       return getStatusCodeForVirtDir(virDir, '/').then((result) {
         expect(result, HttpStatus.notFound);
@@ -33,7 +33,7 @@ void main() {
     });
 
     testVirtualDir('dir-not-exists', (dir) {
-      var virDir = new VirtualDirectory(pathos.join('${dir.path}foo'));
+      var virDir = VirtualDirectory(pathos.join('${dir.path}foo'));
 
       return getStatusCodeForVirtDir(virDir, '/').then((result) {
         expect(result, HttpStatus.notFound);
@@ -44,15 +44,15 @@ void main() {
   group('serve-file', () {
     group('top-level', () {
       testVirtualDir('file-exists', (dir) {
-        new File('${dir.path}/file')..createSync();
-        var virDir = new VirtualDirectory(dir.path);
+        File('${dir.path}/file')..createSync();
+        var virDir = VirtualDirectory(dir.path);
         return getStatusCodeForVirtDir(virDir, '/file').then((result) {
           expect(result, HttpStatus.ok);
         });
       });
 
       testVirtualDir('file-not-exists', (dir) {
-        var virDir = new VirtualDirectory(dir.path);
+        var virDir = VirtualDirectory(dir.path);
 
         return getStatusCodeForVirtDir(virDir, '/file').then((result) {
           expect(result, HttpStatus.notFound);
@@ -62,18 +62,18 @@ void main() {
 
     group('in-dir', () {
       testVirtualDir('file-exists', (dir) {
-        var dir2 = new Directory('${dir.path}/dir')..createSync();
-        new File('${dir2.path}/file')..createSync();
-        var virDir = new VirtualDirectory(dir.path);
+        var dir2 = Directory('${dir.path}/dir')..createSync();
+        File('${dir2.path}/file')..createSync();
+        var virDir = VirtualDirectory(dir.path);
         return getStatusCodeForVirtDir(virDir, '/dir/file').then((result) {
           expect(result, HttpStatus.ok);
         });
       });
 
       testVirtualDir('file-not-exists', (dir) {
-        new Directory('${dir.path}/dir')..createSync();
-        new File('${dir.path}/file')..createSync();
-        var virDir = new VirtualDirectory(dir.path);
+        Directory('${dir.path}/dir')..createSync();
+        File('${dir.path}/file')..createSync();
+        var virDir = VirtualDirectory(dir.path);
 
         return getStatusCodeForVirtDir(virDir, '/dir/file').then((result) {
           expect(result, HttpStatus.notFound);
@@ -85,7 +85,7 @@ void main() {
   group('serve-dir', () {
     group('top-level', () {
       testVirtualDir('simple', (dir) {
-        var virDir = new VirtualDirectory(dir.path);
+        var virDir = VirtualDirectory(dir.path);
         virDir.allowDirectoryListing = true;
 
         return getAsString(virDir, '/').then((result) {
@@ -94,9 +94,9 @@ void main() {
       });
 
       testVirtualDir('files', (dir) {
-        var virDir = new VirtualDirectory(dir.path);
+        var virDir = VirtualDirectory(dir.path);
         for (var i = 0; i < 10; i++) {
-          new File('${dir.path}/$i').createSync();
+          File('${dir.path}/$i').createSync();
         }
         virDir.allowDirectoryListing = true;
 
@@ -106,8 +106,8 @@ void main() {
       });
 
       testVirtualDir('dir-href', (dir) {
-        var virDir = new VirtualDirectory(dir.path);
-        new Directory('${dir.path}/dir').createSync();
+        var virDir = VirtualDirectory(dir.path);
+        Directory('${dir.path}/dir').createSync();
         virDir.allowDirectoryListing = true;
 
         return getAsString(virDir, '/').then((result) {
@@ -116,9 +116,9 @@ void main() {
       });
 
       testVirtualDir('dirs', (dir) {
-        var virDir = new VirtualDirectory(dir.path);
+        var virDir = VirtualDirectory(dir.path);
         for (var i = 0; i < 10; i++) {
-          new Directory('${dir.path}/$i').createSync();
+          Directory('${dir.path}/$i').createSync();
         }
         virDir.allowDirectoryListing = true;
 
@@ -128,8 +128,8 @@ void main() {
       });
 
       testVirtualDir('encoded-dir', (dir) {
-        var virDir = new VirtualDirectory(dir.path);
-        new Directory('${dir.path}/alert(\'hacked!\');').createSync();
+        var virDir = VirtualDirectory(dir.path);
+        Directory('${dir.path}/alert(\'hacked!\');').createSync();
         virDir.allowDirectoryListing = true;
 
         return getAsString(virDir, '/alert(\'hacked!\');').then((result) {
@@ -138,8 +138,8 @@ void main() {
       });
 
       testVirtualDir('non-ascii-dir', (dir) {
-        var virDir = new VirtualDirectory(dir.path);
-        new Directory('${dir.path}/æø').createSync();
+        var virDir = VirtualDirectory(dir.path);
+        Directory('${dir.path}/æø').createSync();
         virDir.allowDirectoryListing = true;
 
         return getAsString(virDir, '/').then((result) {
@@ -148,7 +148,7 @@ void main() {
       });
 
       testVirtualDir('content-type', (dir) {
-        var virDir = new VirtualDirectory(dir.path);
+        var virDir = VirtualDirectory(dir.path);
         virDir.allowDirectoryListing = true;
 
         return getHeaders(virDir, '/').then((headers) {
@@ -159,8 +159,8 @@ void main() {
 
       if (!Platform.isWindows) {
         testVirtualDir('recursive-link', (dir) {
-          new Link('${dir.path}/recursive')..createSync('.');
-          var virDir = new VirtualDirectory(dir.path);
+          Link('${dir.path}/recursive')..createSync('.');
+          var virDir = VirtualDirectory(dir.path);
           virDir.allowDirectoryListing = true;
 
           return Future.wait([
@@ -179,9 +179,8 @@ void main() {
         });
 
         testVirtualDir('encoded-path', (dir) {
-          var virDir = new VirtualDirectory(dir.path);
-          new Directory('${dir.path}/javascript:alert(document);"')
-              .createSync();
+          var virDir = VirtualDirectory(dir.path);
+          Directory('${dir.path}/javascript:alert(document);"').createSync();
           virDir.allowDirectoryListing = true;
 
           return getAsString(virDir, '/').then((result) {
@@ -190,8 +189,8 @@ void main() {
         });
 
         testVirtualDir('encoded-special', (dir) {
-          var virDir = new VirtualDirectory(dir.path);
-          new Directory('${dir.path}/<>&"').createSync();
+          var virDir = VirtualDirectory(dir.path);
+          Directory('${dir.path}/<>&"').createSync();
           virDir.allowDirectoryListing = true;
 
           return getAsString(virDir, '/').then((result) {
@@ -204,7 +203,7 @@ void main() {
 
     group('custom', () {
       testVirtualDir('simple', (dir) {
-        var virDir = new VirtualDirectory(dir.path);
+        var virDir = VirtualDirectory(dir.path);
         virDir.allowDirectoryListing = true;
         virDir.directoryHandler = (dir2, request) {
           expect(dir2, isNotNull);
@@ -219,13 +218,13 @@ void main() {
       });
 
       testVirtualDir('index-1', (dir) {
-        new File('${dir.path}/index.html').writeAsStringSync('index file');
-        var virDir = new VirtualDirectory(dir.path);
+        File('${dir.path}/index.html').writeAsStringSync('index file');
+        var virDir = VirtualDirectory(dir.path);
         virDir.allowDirectoryListing = true;
         virDir.directoryHandler = (dir2, request) {
           // Redirect directory-requests to index.html files.
-          var indexUri = new Uri.file(dir2.path).resolve('index.html');
-          return virDir.serveFile(new File(indexUri.toFilePath()), request);
+          var indexUri = Uri.file(dir2.path).resolve('index.html');
+          return virDir.serveFile(File(indexUri.toFilePath()), request);
         };
 
         return getAsString(virDir, '/').then((result) {
@@ -234,8 +233,8 @@ void main() {
       });
 
       testVirtualDir('index-2', (dir) {
-        new Directory('${dir.path}/dir').createSync();
-        var virDir = new VirtualDirectory(dir.path);
+        Directory('${dir.path}/dir').createSync();
+        var virDir = VirtualDirectory(dir.path);
         virDir.allowDirectoryListing = true;
 
         virDir.directoryHandler = (dir2, request) {
@@ -249,15 +248,15 @@ void main() {
       });
 
       testVirtualDir('index-3', (dir) {
-        new File('${dir.path}/dir/index.html')
+        File('${dir.path}/dir/index.html')
           ..createSync(recursive: true)
           ..writeAsStringSync('index file');
-        var virDir = new VirtualDirectory(dir.path);
+        var virDir = VirtualDirectory(dir.path);
         virDir.allowDirectoryListing = true;
         virDir.directoryHandler = (dir2, request) {
           // Redirect directory-requests to index.html files.
-          var indexUri = new Uri.file(dir2.path).resolve('index.html');
-          return virDir.serveFile(new File(indexUri.toFilePath()), request);
+          var indexUri = Uri.file(dir2.path).resolve('index.html');
+          return virDir.serveFile(File(indexUri.toFilePath()), request);
         };
         return getAsString(virDir, '/dir').then((result) {
           expect(result, 'index file');
@@ -265,15 +264,15 @@ void main() {
       });
 
       testVirtualDir('index-4', (dir) {
-        new File('${dir.path}/dir/index.html')
+        File('${dir.path}/dir/index.html')
           ..createSync(recursive: true)
           ..writeAsStringSync('index file');
-        var virDir = new VirtualDirectory(dir.path);
+        var virDir = VirtualDirectory(dir.path);
         virDir.allowDirectoryListing = true;
         virDir.directoryHandler = (dir2, request) {
           // Redirect directory-requests to index.html files.
-          var indexUri = new Uri.file(dir2.path).resolve('index.html');
-          virDir.serveFile(new File(indexUri.toFilePath()), request);
+          var indexUri = Uri.file(dir2.path).resolve('index.html');
+          virDir.serveFile(File(indexUri.toFilePath()), request);
         };
         return getAsString(virDir, '/dir/').then((result) {
           expect(result, 'index file');
@@ -283,7 +282,7 @@ void main() {
 
     group('path-prefix', () {
       testVirtualDir('simple', (dir) {
-        var virDir = new VirtualDirectory(dir.path, pathPrefix: '/path');
+        var virDir = VirtualDirectory(dir.path, pathPrefix: '/path');
         virDir.allowDirectoryListing = true;
         virDir.directoryHandler = (d, request) {
           expect(FileSystemEntity.identicalSync(dir.path, d.path), isTrue);
@@ -296,7 +295,7 @@ void main() {
       });
 
       testVirtualDir('trailing-slash', (dir) {
-        var virDir = new VirtualDirectory(dir.path, pathPrefix: '/path/');
+        var virDir = VirtualDirectory(dir.path, pathPrefix: '/path/');
         virDir.allowDirectoryListing = true;
         virDir.directoryHandler = (d, request) {
           expect(FileSystemEntity.identicalSync(dir.path, d.path), isTrue);
@@ -309,7 +308,7 @@ void main() {
       });
 
       testVirtualDir('not-matching', (dir) {
-        var virDir = new VirtualDirectory(dir.path, pathPrefix: '/path/');
+        var virDir = VirtualDirectory(dir.path, pathPrefix: '/path/');
         return getStatusCodeForVirtDir(virDir, '/').then((result) {
           expect(result, HttpStatus.notFound);
         });
@@ -321,10 +320,10 @@ void main() {
     if (!Platform.isWindows) {
       group('follow-links', () {
         testVirtualDir('dir-link', (dir) {
-          var dir2 = new Directory('${dir.path}/dir2')..createSync();
-          new Link('${dir.path}/dir3')..createSync('dir2');
-          new File('${dir2.path}/file')..createSync();
-          var virDir = new VirtualDirectory(dir.path);
+          var dir2 = Directory('${dir.path}/dir2')..createSync();
+          Link('${dir.path}/dir3')..createSync('dir2');
+          File('${dir2.path}/file')..createSync();
+          var virDir = VirtualDirectory(dir.path);
           virDir.followLinks = true;
 
           return getStatusCodeForVirtDir(virDir, '/dir3/file').then((result) {
@@ -333,9 +332,9 @@ void main() {
         });
 
         testVirtualDir('root-link', (dir) {
-          new Link('${dir.path}/dir3')..createSync('.');
-          new File('${dir.path}/file')..createSync();
-          var virDir = new VirtualDirectory(dir.path);
+          Link('${dir.path}/dir3')..createSync('.');
+          File('${dir.path}/file')..createSync();
+          var virDir = VirtualDirectory(dir.path);
           virDir.followLinks = true;
 
           return getStatusCodeForVirtDir(virDir, '/dir3/file').then((result) {
@@ -345,9 +344,9 @@ void main() {
 
         group('bad-links', () {
           testVirtualDir('absolute-link', (dir) {
-            new File('${dir.path}/file')..createSync();
-            new Link('${dir.path}/file2')..createSync('${dir.path}/file');
-            var virDir = new VirtualDirectory(dir.path);
+            File('${dir.path}/file')..createSync();
+            Link('${dir.path}/file2')..createSync('${dir.path}/file');
+            var virDir = VirtualDirectory(dir.path);
             virDir.followLinks = true;
 
             return getStatusCodeForVirtDir(virDir, '/file2').then((result) {
@@ -356,10 +355,10 @@ void main() {
           });
 
           testVirtualDir('relative-parent-link', (dir) {
-            var dir2 = new Directory('${dir.path}/dir')..createSync();
-            new File('${dir.path}/file')..createSync();
-            new Link('${dir2.path}/file')..createSync('../file');
-            var virDir = new VirtualDirectory(dir2.path);
+            var dir2 = Directory('${dir.path}/dir')..createSync();
+            File('${dir.path}/file')..createSync();
+            Link('${dir2.path}/file')..createSync('../file');
+            var virDir = VirtualDirectory(dir2.path);
             virDir.followLinks = true;
 
             return getStatusCodeForVirtDir(virDir, '/dir3/file').then((result) {
@@ -371,10 +370,10 @@ void main() {
 
       group('not-follow-links', () {
         testVirtualDir('dir-link', (dir) {
-          var dir2 = new Directory('${dir.path}/dir2')..createSync();
-          new Link('${dir.path}/dir3')..createSync('dir2');
-          new File('${dir2.path}/file')..createSync();
-          var virDir = new VirtualDirectory(dir.path);
+          var dir2 = Directory('${dir.path}/dir2')..createSync();
+          Link('${dir.path}/dir3')..createSync('dir2');
+          File('${dir2.path}/file')..createSync();
+          var virDir = VirtualDirectory(dir.path);
           virDir.followLinks = false;
 
           return getStatusCodeForVirtDir(virDir, '/dir3/file').then((result) {
@@ -386,9 +385,9 @@ void main() {
       group('follow-links', () {
         group('no-root-jail', () {
           testVirtualDir('absolute-link', (dir) {
-            new File('${dir.path}/file')..createSync();
-            new Link('${dir.path}/file2')..createSync('${dir.path}/file');
-            var virDir = new VirtualDirectory(dir.path);
+            File('${dir.path}/file')..createSync();
+            Link('${dir.path}/file2')..createSync('${dir.path}/file');
+            var virDir = VirtualDirectory(dir.path);
             virDir.followLinks = true;
             virDir.jailRoot = false;
 
@@ -398,10 +397,10 @@ void main() {
           });
 
           testVirtualDir('relative-parent-link', (dir) {
-            var dir2 = new Directory('${dir.path}/dir')..createSync();
-            new File('${dir.path}/file')..createSync();
-            new Link('${dir2.path}/file')..createSync('../file');
-            var virDir = new VirtualDirectory(dir2.path);
+            var dir2 = Directory('${dir.path}/dir')..createSync();
+            File('${dir.path}/file')..createSync();
+            Link('${dir2.path}/file')..createSync('../file');
+            var virDir = VirtualDirectory(dir2.path);
             virDir.followLinks = true;
             virDir.jailRoot = false;
 
@@ -417,8 +416,8 @@ void main() {
   group('last-modified', () {
     group('file', () {
       testVirtualDir('file-exists', (dir) {
-        new File('${dir.path}/file')..createSync();
-        var virDir = new VirtualDirectory(dir.path);
+        File('${dir.path}/file')..createSync();
+        var virDir = VirtualDirectory(dir.path);
 
         return getHeaders(virDir, '/file').then((headers) {
           expect(headers.value(HttpHeaders.lastModifiedHeader), isNotNull);
@@ -433,8 +432,8 @@ void main() {
       });
 
       testVirtualDir('file-changes', (dir) {
-        new File('${dir.path}/file')..createSync();
-        var virDir = new VirtualDirectory(dir.path);
+        File('${dir.path}/file')..createSync();
+        var virDir = VirtualDirectory(dir.path);
 
         return getHeaders(virDir, '/file').then((headers) {
           expect(headers.value(HttpHeaders.lastModifiedHeader), isNotNull);
@@ -456,8 +455,8 @@ void main() {
   group('content-type', () {
     group('mime-type', () {
       testVirtualDir('from-path', (dir) {
-        new File('${dir.path}/file.jpg')..createSync();
-        var virDir = new VirtualDirectory(dir.path);
+        File('${dir.path}/file.jpg')..createSync();
+        var virDir = VirtualDirectory(dir.path);
 
         return getHeaders(virDir, '/file.jpg').then((headers) {
           var contentType = headers.contentType.toString();
@@ -466,9 +465,9 @@ void main() {
       });
 
       testVirtualDir('from-magic-number', (dir) {
-        var file = new File('${dir.path}/file.jpg')..createSync();
+        var file = File('${dir.path}/file.jpg')..createSync();
         file.writeAsBytesSync([0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A]);
-        var virDir = new VirtualDirectory(dir.path);
+        var virDir = VirtualDirectory(dir.path);
 
         return getHeaders(virDir, '/file.jpg').then((headers) {
           var contentType = headers.contentType.toString();
@@ -483,8 +482,8 @@ void main() {
     VirtualDirectory virDir;
 
     void prepare(Directory dir) {
-      new File('${dir.path}/file').writeAsBytesSync(fileContent);
-      virDir = new VirtualDirectory(dir.path);
+      File('${dir.path}/file').writeAsBytesSync(fileContent);
+      virDir = VirtualDirectory(dir.path);
     }
 
     testVirtualDir('range', (dir) {
@@ -627,15 +626,15 @@ void main() {
 
   group('error-page', () {
     testVirtualDir('default', (dir) {
-      var virDir = new VirtualDirectory(pathos.join(dir.path, 'foo'));
+      var virDir = VirtualDirectory(pathos.join(dir.path, 'foo'));
 
       return getAsString(virDir, '/').then((result) {
-        expect(result, matches(new RegExp('404.*Not Found')));
+        expect(result, matches(RegExp('404.*Not Found')));
       });
     });
 
     testVirtualDir('custom', (dir) {
-      var virDir = new VirtualDirectory(pathos.join(dir.path, 'foo'));
+      var virDir = VirtualDirectory(pathos.join(dir.path, 'foo'));
 
       virDir.errorPageHandler = (request) {
         request.response.write('my-page ');
@@ -651,7 +650,7 @@ void main() {
 
   group('escape-root', () {
     testVirtualDir('escape1', (dir) {
-      var virDir = new VirtualDirectory(dir.path);
+      var virDir = VirtualDirectory(dir.path);
       virDir.allowDirectoryListing = true;
 
       return getStatusCodeForVirtDir(virDir, '/../').then((result) {
@@ -660,8 +659,8 @@ void main() {
     });
 
     testVirtualDir('escape2', (dir) {
-      new Directory('${dir.path}/dir').createSync();
-      var virDir = new VirtualDirectory(dir.path);
+      Directory('${dir.path}/dir').createSync();
+      var virDir = VirtualDirectory(dir.path);
       virDir.allowDirectoryListing = true;
 
       return getStatusCodeForVirtDir(virDir, '/dir/../../').then((result) {
@@ -674,8 +673,8 @@ void main() {
 
   group('url-decode', () {
     testVirtualDir('with-space', (dir) {
-      new File('${dir.path}/my file')..createSync();
-      var virDir = new VirtualDirectory(dir.path);
+      File('${dir.path}/my file')..createSync();
+      var virDir = VirtualDirectory(dir.path);
 
       return getStatusCodeForVirtDir(virDir, '/my file').then((result) {
         expect(result, HttpStatus.ok);
@@ -683,8 +682,8 @@ void main() {
     });
 
     testVirtualDir('encoded-space', (dir) {
-      new File('${dir.path}/my file')..createSync();
-      var virDir = new VirtualDirectory(dir.path);
+      File('${dir.path}/my file')..createSync();
+      var virDir = VirtualDirectory(dir.path);
 
       return getStatusCodeForVirtDir(virDir, '/my%20file').then((result) {
         expect(result, HttpStatus.notFound);
@@ -692,10 +691,10 @@ void main() {
     });
 
     testVirtualDir('encoded-path-separator', (dir) {
-      new Directory('${dir.path}/a').createSync();
-      new Directory('${dir.path}/a/b').createSync();
-      new Directory('${dir.path}/a/b/c').createSync();
-      var virDir = new VirtualDirectory(dir.path);
+      Directory('${dir.path}/a').createSync();
+      Directory('${dir.path}/a/b').createSync();
+      Directory('${dir.path}/a/b/c').createSync();
+      var virDir = VirtualDirectory(dir.path);
       virDir.allowDirectoryListing = true;
 
       return getStatusCodeForVirtDir(virDir, '/a%2fb/c', rawPath: true)
@@ -705,7 +704,7 @@ void main() {
     });
 
     testVirtualDir('encoded-null', (dir) {
-      var virDir = new VirtualDirectory(dir.path);
+      var virDir = VirtualDirectory(dir.path);
       virDir.allowDirectoryListing = true;
 
       return getStatusCodeForVirtDir(virDir, '/%00', rawPath: true)
@@ -729,12 +728,12 @@ void main() {
 
   group('serve-file', () {
     testVirtualDir('from-dir-handler', (dir) {
-      new File('${dir.path}/file')..writeAsStringSync('file contents');
-      var virDir = new VirtualDirectory(dir.path);
+      File('${dir.path}/file')..writeAsStringSync('file contents');
+      var virDir = VirtualDirectory(dir.path);
       virDir.allowDirectoryListing = true;
       virDir.directoryHandler = (d, request) {
         expect(FileSystemEntity.identicalSync(dir.path, d.path), isTrue);
-        return virDir.serveFile(new File('${d.path}/file'), request);
+        return virDir.serveFile(File('${d.path}/file'), request);
       };
 
       return getAsString(virDir, '/').then((result) {

@@ -57,7 +57,7 @@ class FormField {
 
 Future _postDataTest(List<int> message, String contentType, String boundary,
     List<FormField> expectedFields,
-    {Encoding defaultEncoding: latin1}) async {
+    {Encoding defaultEncoding = latin1}) async {
   var addr = (await InternetAddress.lookup("localhost"))[0];
 
   var server = await HttpServer.bind(addr, 0);
@@ -65,7 +65,7 @@ Future _postDataTest(List<int> message, String contentType, String boundary,
   server.listen((request) {
     var boundary = request.headers.contentType.parameters['boundary'];
     request
-        .transform(new MimeMultipartTransformer(boundary))
+        .transform(MimeMultipartTransformer(boundary))
         .map((part) =>
             HttpMultipartFormData.parse(part, defaultEncoding: defaultEncoding))
         .map((multipart) {
@@ -80,7 +80,7 @@ Future _postDataTest(List<int> message, String contentType, String boundary,
             if (multipart.contentType != null) {
               contentType = multipart.contentType.mimeType;
             }
-            return new FormField(
+            return FormField(
                 multipart.contentDisposition.parameters['name'], data,
                 contentType: contentType,
                 filename: multipart.contentDisposition.parameters['filename']);
@@ -94,7 +94,7 @@ Future _postDataTest(List<int> message, String contentType, String boundary,
         });
   });
 
-  var client = new HttpClient();
+  var client = HttpClient();
 
   var request = await client.post('localhost', server.port, '/');
 
@@ -130,8 +130,8 @@ Content of file\r
 --AaB03x--\r\n''';
 
     await _postDataTest(message.codeUnits, 'multipart/form-data', 'AaB03x', [
-      new FormField('submit-name', 'Larry'),
-      new FormField('files', 'Content of file',
+      FormField('submit-name', 'Larry'),
+      FormField('files', 'Content of file',
           contentType: 'text/plain', filename: 'file1.txt')
     ]);
   });
@@ -146,7 +146,7 @@ Content of file\r
 --AaB03x--\r\n''';
 
     await _postDataTest(message.codeUnits, 'multipart/form-data', 'AaB03x', [
-      new FormField('files', 'Content of file',
+      FormField('files', 'Content of file',
           contentType: 'text/plain', filename: 'C:\\file1".txt')
     ]);
   });
@@ -192,8 +192,8 @@ Content of file\r
 
     await _postDataTest(message2, 'multipart/form-data',
         '----WebKitFormBoundaryQSql8kDALM7tAkC1', [
-      new FormField('submit-name', 'Test'),
-      new FormField('files', data,
+      FormField('submit-name', 'Test'),
+      FormField('files', data,
           contentType: 'application/octet-stream', filename: 'VERSION')
     ]);
   });
@@ -220,7 +220,7 @@ Content of file\r
         message3,
         'multipart/form-data',
         '----WebKitFormBoundaryvAVzugKMtZbyWoBG',
-        [new FormField('name', '&#12402;&#12425;&#12364;&#12394;')],
+        [FormField('name', '&#12402;&#12425;&#12364;&#12394;')],
         defaultEncoding: utf8);
   });
 
@@ -241,11 +241,8 @@ Content of file\r
       13, 10
     ];
 
-    await _postDataTest(
-        message4,
-        'multipart/form-data',
-        '----WebKitFormBoundaryGXtBrcjxheKeN6i0',
-        [new FormField('test', 'ひらがな')],
+    await _postDataTest(message4, 'multipart/form-data',
+        '----WebKitFormBoundaryGXtBrcjxheKeN6i0', [FormField('test', 'ひらがな')],
         defaultEncoding: utf8);
   });
 
@@ -263,10 +260,7 @@ Content of file\r
       49, 98, 80, 104, 45, 45, 13, 10
     ];
 
-    await _postDataTest(
-        message5,
-        'multipart/form-data',
-        '----WebKitFormBoundaryfe0EzV1aNysD1bPh',
-        [new FormField('name', 'øv')]);
+    await _postDataTest(message5, 'multipart/form-data',
+        '----WebKitFormBoundaryfe0EzV1aNysD1bPh', [FormField('name', 'øv')]);
   });
 }

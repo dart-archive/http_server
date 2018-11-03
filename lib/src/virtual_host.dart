@@ -7,48 +7,38 @@ library http_server.virtual_host;
 import 'dart:async';
 import 'dart:io';
 
-/**
- * The [VirtualHost] class is a utility class for handling multiple hosts on
- * multiple sources, by using a named-based approach.
- */
+/// The [VirtualHost] class is a utility class for handling multiple hosts on
+/// multiple sources, by using a named-based approach.
 abstract class VirtualHost {
-  /**
-   * Get the [Stream] of [HttpRequest]s, not matching any hosts. If unused, the
-   * default implementation will result in a [HttpHeaders.FORBIDDEN] response.
-   */
+  /// Get the [Stream] of [HttpRequest]s, not matching any hosts. If unused, the
+  /// default implementation will result in a [HttpStatus.forbidden] response.
   Stream<HttpRequest> get unhandled;
 
-  /**
-   * Construct a new [VirtualHost].
-   *
-   * The optional [source] is a shortcut for calling [addSource].
-   *
-   * Example of usage:
-   *
-   *   HttpServer.bind(..., 80).then((server) {
-   *     var virtualHost = new VirtualHost(server);
-   *     virtualServer.addHost('static.myserver.com')
-   *         .listen(...);
-   *     virtualServer.addHost('cache.myserver.com')
-   *         .listen(...);
-   *   })
-   */
-  factory VirtualHost([Stream<HttpRequest> source]) => new _VirtualHost(source);
+  /// Construct a new [VirtualHost].
+  ///
+  /// The optional [source] is a shortcut for calling [addSource].
+  ///
+  /// Example of usage:
+  ///
+  ///   HttpServer.bind(..., 80).then((server) {
+  ///     var virtualHost = new VirtualHost(server);
+  ///     virtualServer.addHost('static.myserver.com')
+  ///         .listen(...);
+  ///     virtualServer.addHost('cache.myserver.com')
+  ///         .listen(...);
+  ///   })
+  factory VirtualHost([Stream<HttpRequest> source]) => _VirtualHost(source);
 
-  /**
-   * Provide another source of [HttpRequest]s in the form of a [Stream].
-   */
+  /// Provide another source of [HttpRequest]s in the form of a [Stream].
   void addSource(Stream<HttpRequest> source);
 
-  /**
-   * Add a host to the [VirtualHost] instance. The host can be either a specific
-   * domain (`my.domain.name`) or a wildcard-based domain name
-   * (`*.domain.name`). The former will only match the specific domain name
-   * while the latter will match any series of sub-domains.
-   *
-   * If both `my.domain.name` and `*.domain.name` is specified, the most
-   * qualified will take precedence, `my.domain.name` in this case.
-   */
+  /// Add a host to the [VirtualHost] instance. The host can be either a specific
+  /// domain (`my.domain.name`) or a wildcard-based domain name
+  /// (`*.domain.name`). The former will only match the specific domain name
+  /// while the latter will match any series of sub-domains.
+  ///
+  /// If both `my.domain.name` and `*.domain.name` is specified, the most
+  /// qualified will take precedence, `my.domain.name` in this case.
   Stream<HttpRequest> addHost(String host);
 }
 
@@ -59,11 +49,11 @@ class _VirtualHostDomain {
 }
 
 class _VirtualHost implements VirtualHost {
-  final _VirtualHostDomain _topDomain = new _VirtualHostDomain();
+  final _VirtualHostDomain _topDomain = _VirtualHostDomain();
   StreamController<HttpRequest> _unhandledController;
 
   Stream<HttpRequest> get unhandled {
-    _unhandledController ??= new StreamController<HttpRequest>();
+    _unhandledController ??= StreamController<HttpRequest>();
 
     return _unhandledController.stream;
   }
@@ -107,27 +97,27 @@ class _VirtualHost implements VirtualHost {
 
   Stream<HttpRequest> addHost(String host) {
     if (host.lastIndexOf('*') > 0) {
-      throw new ArgumentError(
+      throw ArgumentError(
           'Wildcards are only allowed in the beginning of a host');
     }
-    var controller = new StreamController<HttpRequest>();
+    var controller = StreamController<HttpRequest>();
     var domains = host.split('.');
     var current = _topDomain;
     for (var i = domains.length - 1; i >= 0; i--) {
       if (domains[i] == '*') {
         if (current.any != null) {
-          throw new ArgumentError('Host is already provided');
+          throw ArgumentError('Host is already provided');
         }
         current.any = controller;
       } else {
         if (!current.subDomains.containsKey(domains[i])) {
-          current.subDomains[domains[i]] = new _VirtualHostDomain();
+          current.subDomains[domains[i]] = _VirtualHostDomain();
         }
         if (i > 0) {
           current = current.subDomains[domains[i]];
         } else {
           if (current.subDomains[domains[i]].exact != null) {
-            throw new ArgumentError('Host is already provided');
+            throw ArgumentError('Host is already provided');
           }
           current.subDomains[domains[i]].exact = controller;
         }

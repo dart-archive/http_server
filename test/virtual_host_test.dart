@@ -16,7 +16,7 @@ void main() {
   test('empty-host', () {
     expect(
         HttpServer.bind('localhost', 0).then((server) {
-          new VirtualHost(server);
+          VirtualHost(server);
           return getStatusCode(server.port, '/').whenComplete(server.close);
         }),
         completion(equals(HttpStatus.forbidden)));
@@ -25,7 +25,7 @@ void main() {
   test('empty-host-unhandled', () {
     expect(
         HttpServer.bind('localhost', 0).then((server) {
-          var virHost = new VirtualHost(server);
+          var virHost = VirtualHost(server);
           expect(virHost.unhandled.first.then((request) {
             request.response.close();
           }), completion(isNull));
@@ -37,7 +37,7 @@ void main() {
   test('single-host', () {
     expect(
         HttpServer.bind('localhost', 0).then((server) {
-          var virHost = new VirtualHost(server);
+          var virHost = VirtualHost(server);
           expect(
               virHost.addHost('*.host.com').first.then((request) {
                 request.response.close();
@@ -52,7 +52,7 @@ void main() {
   test('multiple-host', () {
     expect(
         HttpServer.bind('localhost', 0).then((server) {
-          var virHost = new VirtualHost(server);
+          var virHost = VirtualHost(server);
           expect(
               virHost.addHost('*.host1.com').first.then((request) {
                 request.response.close();
@@ -83,7 +83,7 @@ void main() {
           HttpServer.bind('localhost', 0),
           HttpServer.bindSecure('localhost', 0, serverContext)
         ]).then((servers) {
-          var virHost = new VirtualHost();
+          var virHost = VirtualHost();
           virHost.addSource(servers[0]);
           virHost.addSource(servers[1]);
           virHost.unhandled.listen((request) {
@@ -102,7 +102,7 @@ void main() {
     test('specific-sub-domain', () {
       expect(
           HttpServer.bind('localhost', 0).then((server) {
-            var virHost = new VirtualHost(server);
+            var virHost = VirtualHost(server);
             expect(
                 virHost.addHost('my1.host.com').first.then((request) {
                   request.response.close();
@@ -130,7 +130,7 @@ void main() {
     test('wildcard-sub-domain', () {
       expect(
           HttpServer.bind('localhost', 0).then((server) {
-            var virHost = new VirtualHost(server);
+            var virHost = VirtualHost(server);
             expect(
                 virHost.addHost('*.host1.com').first.then((request) {
                   request.response.close();
@@ -158,7 +158,7 @@ void main() {
     test('mix-sub-domain', () {
       expect(
           HttpServer.bind('localhost', 0).then((server) {
-            var virHost = new VirtualHost(server);
+            var virHost = VirtualHost(server);
             expect(
                 virHost.addHost('my1.host.com').first.then((request) {
                   request.response.close();
@@ -186,7 +186,7 @@ void main() {
     test('wildcard', () {
       expect(
           HttpServer.bind('localhost', 0).then((server) {
-            var virHost = new VirtualHost(server);
+            var virHost = VirtualHost(server);
             expect(
                 virHost.addHost('*').first.then((request) {
                   request.response.close();
@@ -212,7 +212,7 @@ void main() {
     });
 
     test('duplicate-domain', () {
-      var virHost = new VirtualHost();
+      var virHost = VirtualHost();
       virHost.addHost('my1.host.com');
       expect(() => (virHost.addHost('my1.host.com')), throwsArgumentError);
       virHost.addHost('*.host.com');
