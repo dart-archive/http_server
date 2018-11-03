@@ -1,3 +1,7 @@
+# 0.9.8+1
+
+* Fix a Dart 2 type issue.
+
 # 0.9.8
 
 * Updates to support Dart 2 constants.
