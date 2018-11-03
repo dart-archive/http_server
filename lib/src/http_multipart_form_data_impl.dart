@@ -33,7 +33,7 @@ class HttpMultipartFormDataImpl extends Stream
     _stream = _mimeMultipart;
     if (contentTransferEncoding != null) {
       // TODO(ajohnsen): Support BASE64, etc.
-      throw new HttpException("Unsupported contentTransferEncoding: "
+      throw HttpException("Unsupported contentTransferEncoding: "
           "${contentTransferEncoding.value}");
     }
 
@@ -83,7 +83,7 @@ class HttpMultipartFormDataImpl extends Stream
       throw const HttpException(
           "Mime Multipart doesn't contain a Content-Disposition header value");
     }
-    return new HttpMultipartFormDataImpl(
+    return HttpMultipartFormDataImpl(
         type, disposition, encoding, multipart, defaultEncoding);
   }
 

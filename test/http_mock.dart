@@ -6,8 +6,7 @@ import 'dart:convert';
 import 'dart:io';
 
 class MockHttpHeaders implements HttpHeaders {
-  final Map<String, List<String>> _headers =
-      new HashMap<String, List<String>>();
+  final Map<String, List<String>> _headers = HashMap<String, List<String>>();
 
   operator [](key) => _headers[key];
 
@@ -45,7 +44,7 @@ class MockHttpHeaders implements HttpHeaders {
     var values = _headers[name];
     if (values == null) return null;
     if (values.length > 1) {
-      throw new HttpException("More than one value for header $name");
+      throw HttpException("More than one value for header $name");
     }
     return values[0];
   }
@@ -60,7 +59,7 @@ class MockHttpHeaders implements HttpHeaders {
       } else if (value is String) {
         _set(HttpHeaders.ifModifiedSinceHeader, value);
       } else {
-        throw new HttpException("Unexpected type for header named $name");
+        throw HttpException("Unexpected type for header named $name");
       }
     } else {
       _addValue(name, value);
@@ -114,13 +113,13 @@ class MockHttpHeaders implements HttpHeaders {
 
 class MockHttpRequest implements HttpRequest {
   final Uri uri;
-  final MockHttpResponse response = new MockHttpResponse();
-  final HttpHeaders headers = new MockHttpHeaders();
+  final MockHttpResponse response = MockHttpResponse();
+  final HttpHeaders headers = MockHttpHeaders();
   final String method = 'GET';
   final bool followRedirects;
 
   MockHttpRequest(this.uri,
-      {this.followRedirects: true, DateTime ifModifiedSince}) {
+      {this.followRedirects = true, DateTime ifModifiedSince}) {
     if (ifModifiedSince != null) {
       headers.ifModifiedSince = ifModifiedSince;
     }
@@ -133,8 +132,8 @@ class MockHttpRequest implements HttpRequest {
 }
 
 class MockHttpResponse implements HttpResponse {
-  final HttpHeaders headers = new MockHttpHeaders();
-  final Completer _completer = new Completer();
+  final HttpHeaders headers = MockHttpHeaders();
+  final Completer _completer = Completer();
   final List<int> _buffer = <int>[];
   String _reasonPhrase;
   Future _doneFuture;
@@ -171,7 +170,7 @@ class MockHttpResponse implements HttpResponse {
     // doesn't seem to be hit...hmm...
   }
 
-  Future redirect(Uri location, {int status: HttpStatus.movedPermanently}) {
+  Future redirect(Uri location, {int status = HttpStatus.movedPermanently}) {
     statusCode = status;
     headers.set(HttpHeaders.locationHeader, location.toString());
     return close();

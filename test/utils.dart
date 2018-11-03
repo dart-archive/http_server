@@ -10,7 +10,7 @@ import 'dart:io';
 import 'dart:mirrors';
 
 import "package:test/test.dart";
-import 'package:test/src/backend/invoker.dart';
+import 'package:test_api/src/backend/invoker.dart';
 
 import 'package:http_server/http_server.dart';
 
@@ -21,10 +21,8 @@ Object get currentTestCase => Invoker.current.liveTest;
 SecurityContext serverContext;
 SecurityContext clientContext;
 
-/**
- *  Used to flag a given test case as being a mock or not.
- */
-final _isMockTestExpando = new Expando<bool>('isMockTest');
+///  Used to flag a given test case as being a mock or not.
+final _isMockTestExpando = Expando<bool>('isMockTest');
 
 void testVirtualDir(String name, Future func(Directory dir)) {
   _testVirtualDir(name, false, func);
@@ -52,17 +50,17 @@ void _testVirtualDir(String name, bool useMocks, Future func(Directory dir)) {
 
 Future<int> getStatusCodeForVirtDir(VirtualDirectory virtualDir, String path,
     {String host,
-    bool secure: false,
+    bool secure = false,
     DateTime ifModifiedSince,
-    bool rawPath: false,
-    bool followRedirects: true,
+    bool rawPath = false,
+    bool followRedirects = true,
     int from,
     int to}) {
   // if this is a mock test, then run the mock code path
   if (_isMockTestExpando[currentTestCase]) {
     var uri = _getUri(0, path, secure: secure, rawPath: rawPath);
 
-    var request = new MockHttpRequest(uri,
+    var request = MockHttpRequest(uri,
         followRedirects: followRedirects, ifModifiedSince: ifModifiedSince);
     _addRangeHeader(request, from, to);
 
@@ -87,19 +85,19 @@ Future<int> getStatusCodeForVirtDir(VirtualDirectory virtualDir, String path,
 
 Future<int> getStatusCode(int port, String path,
     {String host,
-    bool secure: false,
+    bool secure = false,
     DateTime ifModifiedSince,
-    bool rawPath: false,
-    bool followRedirects: true,
+    bool rawPath = false,
+    bool followRedirects = true,
     int from,
     int to}) async {
   var uri = _getUri(port, path, secure: secure, rawPath: rawPath);
 
   HttpClient client;
   if (secure) {
-    client = new HttpClient(context: clientContext);
+    client = HttpClient(context: clientContext);
   } else {
-    client = new HttpClient();
+    client = HttpClient();
   }
 
   try {
@@ -125,7 +123,7 @@ Future<HttpHeaders> getHeaders(VirtualDirectory virDir, String path,
   if (_isMockTestExpando[currentTestCase]) {
     var uri = _getUri(0, path);
 
-    var request = new MockHttpRequest(uri);
+    var request = MockHttpRequest(uri);
     _addRangeHeader(request, from, to);
 
     return _withMockRequest(virDir, request).then((response) {
@@ -145,7 +143,7 @@ Future<String> getAsString(VirtualDirectory virtualDir, String path) {
   if (_isMockTestExpando[currentTestCase]) {
     var uri = _getUri(0, path);
 
-    var request = new MockHttpRequest(uri);
+    var request = MockHttpRequest(uri);
 
     return _withMockRequest(virtualDir, request).then((response) {
       return response.mockContent;
@@ -165,7 +163,7 @@ Future<List<int>> getAsBytes(VirtualDirectory virtualDir, String path,
   if (_isMockTestExpando[currentTestCase]) {
     var uri = _getUri(0, path);
 
-    var request = new MockHttpRequest(uri);
+    var request = MockHttpRequest(uri);
     _addRangeHeader(request, from, to);
 
     return _withMockRequest(virtualDir, request).then((response) {
@@ -186,7 +184,7 @@ Future<List> getContentAndResponse(VirtualDirectory virtualDir, String path,
   if (_isMockTestExpando[currentTestCase]) {
     var uri = _getUri(0, path);
 
-    var request = new MockHttpRequest(uri);
+    var request = MockHttpRequest(uri);
     _addRangeHeader(request, from, to);
 
     return _withMockRequest(virtualDir, request).then((response) {
@@ -214,7 +212,7 @@ Future<MockHttpResponse> _withMockRequest(
       response.statusCode == HttpStatus.movedTemporarily) {
     if (request.followRedirects == true) {
       var uri = Uri.parse(response.headers.value(HttpHeaders.locationHeader));
-      var newMock = new MockHttpRequest(uri, followRedirects: true);
+      var newMock = MockHttpRequest(uri, followRedirects: true);
 
       return _withMockRequest(virDir, newMock);
     }
@@ -235,7 +233,7 @@ Future<T> _withServer<T>(
 }
 
 Future<HttpHeaders> _getHeaders(int port, String path, int from, int to) {
-  var client = new HttpClient();
+  var client = HttpClient();
   return client
       .get('localhost', port, path)
       .then((request) {
@@ -247,7 +245,7 @@ Future<HttpHeaders> _getHeaders(int port, String path, int from, int to) {
 }
 
 Future<String> _getAsString(int port, String path) {
-  var client = new HttpClient();
+  var client = HttpClient();
   return client
       .get('localhost', port, path)
       .then((request) => request.close())
@@ -256,7 +254,7 @@ Future<String> _getAsString(int port, String path) {
 }
 
 Future<List<int>> _getAsBytes(int port, String path, int from, int to) {
-  var client = new HttpClient();
+  var client = HttpClient();
   return client
       .get('localhost', port, path)
       .then((request) {
@@ -268,7 +266,7 @@ Future<List<int>> _getAsBytes(int port, String path, int from, int to) {
 }
 
 Future<List> _getContentAndResponse(int port, String path, int from, int to) {
-  var client = new HttpClient();
+  var client = HttpClient();
   return client
       .get('localhost', port, path)
       .then((request) {
@@ -280,17 +278,18 @@ Future<List> _getContentAndResponse(int port, String path, int from, int to) {
       .whenComplete(() => client.close());
 }
 
-Uri _getUri(int port, String path, {bool secure: false, bool rawPath: false}) {
+Uri _getUri(int port, String path,
+    {bool secure = false, bool rawPath = false}) {
   if (rawPath) {
-    return new Uri(
+    return Uri(
         scheme: secure ? 'https' : 'http',
         host: 'localhost',
         port: port,
         path: path);
   } else {
     return (secure
-        ? new Uri.https('localhost:$port', path)
-        : new Uri.http('localhost:$port', path));
+        ? Uri.https('localhost:$port', path)
+        : Uri.http('localhost:$port', path));
   }
 }
 
@@ -308,11 +307,11 @@ void setupSecure() {
 
   String localFile(String path) => currentFileUri.resolve(path).toFilePath();
 
-  serverContext = new SecurityContext()
+  serverContext = SecurityContext()
     ..useCertificateChain(localFile('certificates/server_chain.pem'))
     ..usePrivateKey(localFile('certificates/server_key.pem'),
         password: 'dartdart');
 
-  clientContext = new SecurityContext()
+  clientContext = SecurityContext()
     ..setTrustedCertificates(localFile('certificates/trusted_certs.pem'));
 }

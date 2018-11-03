@@ -20,10 +20,10 @@ class HttpBodyHandlerTransformer
   const HttpBodyHandlerTransformer(this._defaultEncoding);
 
   Stream<HttpRequestBody> bind(Stream<HttpRequest> stream) {
-    return new Stream<HttpRequestBody>.eventTransformed(
+    return Stream<HttpRequestBody>.eventTransformed(
         stream,
         (EventSink<HttpRequestBody> sink) =>
-            new _HttpBodyHandlerTransformerSink(_defaultEncoding, sink));
+            _HttpBodyHandlerTransformerSink(_defaultEncoding, sink));
   }
 }
 
@@ -59,7 +59,7 @@ class HttpBodyHandlerImpl {
   static Future<HttpRequestBody> processRequest(
       HttpRequest request, Encoding defaultEncoding) {
     return process(request, request.headers, defaultEncoding)
-        .then((body) => new _HttpRequestBody(request, body), onError: (error) {
+        .then((body) => _HttpRequestBody(request, body), onError: (error) {
       // Try to send BAD_REQUEST response.
       request.response.statusCode = HttpStatus.badRequest;
       request.response.close();
@@ -70,7 +70,7 @@ class HttpBodyHandlerImpl {
   static Future<HttpClientResponseBody> processResponse(
       HttpClientResponse response, Encoding defaultEncoding) {
     return process(response, response.headers, defaultEncoding)
-        .then((body) => new _HttpClientResponseBody(response, body));
+        .then((body) => _HttpClientResponseBody(response, body));
   }
 
   static Future<HttpBody> process(
@@ -79,8 +79,8 @@ class HttpBodyHandlerImpl {
 
     Future<HttpBody> asBinary() {
       return stream
-          .fold(new BytesBuilder(), (builder, data) => builder..add(data))
-          .then((builder) => new _HttpBody("binary", builder.takeBytes()));
+          .fold(BytesBuilder(), (builder, data) => builder..add(data))
+          .then((builder) => _HttpBody("binary", builder.takeBytes()));
     }
 
     Future<HttpBody> asText(Encoding defaultEncoding) {
@@ -90,45 +90,45 @@ class HttpBodyHandlerImpl {
       encoding ??= defaultEncoding;
       return stream
           .transform(encoding.decoder)
-          .fold(new StringBuffer(), (buffer, data) => buffer..write(data))
-          .then((buffer) => new _HttpBody("text", buffer.toString()));
+          .fold(StringBuffer(), (buffer, data) => buffer..write(data))
+          .then((buffer) => _HttpBody("text", buffer.toString()));
     }
 
     Future<HttpBody> asFormData() {
       return stream
           .transform(
-              new MimeMultipartTransformer(contentType.parameters['boundary']))
+              MimeMultipartTransformer(contentType.parameters['boundary']))
           .map((part) => HttpMultipartFormData.parse(part,
               defaultEncoding: defaultEncoding))
           .map((multipart) {
             Future future;
             if (multipart.isText) {
               future = multipart
-                  .fold(new StringBuffer(), (b, s) => b..write(s))
+                  .fold(StringBuffer(), (b, s) => b..write(s))
                   .then((b) => b.toString());
             } else {
               future = multipart
-                  .fold(new BytesBuilder(), (b, d) => b..add(d))
+                  .fold(BytesBuilder(), (b, d) => b..add(d))
                   .then((b) => b.takeBytes());
             }
             return future.then((data) {
               var filename =
                   multipart.contentDisposition.parameters['filename'];
               if (filename != null) {
-                data = new _HttpBodyFileUpload(
-                    multipart.contentType, filename, data);
+                data =
+                    _HttpBodyFileUpload(multipart.contentType, filename, data);
               }
               return [multipart.contentDisposition.parameters['name'], data];
             });
           })
-          .fold(<Future>[], (l, f) => l..add(f))
+          .fold(<Future>[], (List<Future> l, f) => l..add(f))
           .then((values) => Future.wait(values))
           .then((parts) {
             var map = <String, dynamic>{};
             for (var part in parts) {
               map[part[0] as String] = part[1]; // Override existing entries.
             }
-            return new _HttpBody('form', map);
+            return _HttpBody('form', map);
           });
     }
 
@@ -144,7 +144,7 @@ class HttpBodyHandlerImpl {
         switch (contentType.subType) {
           case "json":
             return asText(utf8)
-                .then((body) => new _HttpBody("json", jsonDecode(body.body)));
+                .then((body) => _HttpBody("json", jsonDecode(body.body)));
 
           case "x-www-form-urlencoded":
             return asText(ascii).then((body) {
@@ -154,7 +154,7 @@ class HttpBodyHandlerImpl {
               for (var key in map.keys) {
                 result[key] = map[key];
               }
-              return new _HttpBody("form", result);
+              return _HttpBody("form", result);
             });
 
           default:

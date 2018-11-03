@@ -19,44 +19,36 @@ class _DirectoryRedirect {
 typedef dynamic _DirCallback(Directory dir, HttpRequest request);
 typedef dynamic _ErrorCallback(HttpRequest request);
 
-/**
- * A [VirtualDirectory] can serve files and directory-listing from a root path,
- * to [HttpRequest]s.
- *
- * The [VirtualDirectory] providing secure handling of request uris and
- * file-system links, correct mime-types and custom error pages.
- */
+/// A [VirtualDirectory] can serve files and directory-listing from a root path,
+/// to [HttpRequest]s.
+///
+/// The [VirtualDirectory] providing secure handling of request uris and
+/// file-system links, correct mime-types and custom error pages.
 class VirtualDirectory {
   final String root;
 
-  /**
-   * Set or get if the [VirtualDirectory] should list the content of
-   * directories.
-   */
+  /// Set or get if the [VirtualDirectory] should list the content of
+  /// directories.
   bool allowDirectoryListing = false;
 
-  /**
-   * Set or get if the [VirtualDirectory] should follow links, that point
-   * to other resources within the [root] directory.
-   */
+  /// Set or get if the [VirtualDirectory] should follow links, that point
+  /// to other resources within the [root] directory.
   bool followLinks = true;
 
-  /**
-   * Set or get if the [VirtualDirectory] should jail the root. When the root is
-   * not jailed, links can be followed to outside the [root] directory.
-   */
+  /// Set or get if the [VirtualDirectory] should jail the root. When the root is
+  /// not jailed, links can be followed to outside the [root] directory.
   bool jailRoot = true;
 
   final List<String> _pathPrefixSegments;
 
-  final RegExp _invalidPathRegExp = new RegExp("[\\\/\x00]");
+  final RegExp _invalidPathRegExp = RegExp("[\\\/\x00]");
 
   _ErrorCallback _errorCallback;
   _DirCallback _dirCallback;
 
   static List<String> _parsePathPrefix(String pathPrefix) {
     if (pathPrefix == null) return <String>[];
-    return new Uri(path: pathPrefix)
+    return Uri(path: pathPrefix)
         .pathSegments
         .where((segment) => segment.isNotEmpty)
         .toList();
@@ -78,15 +70,11 @@ class VirtualDirectory {
   VirtualDirectory(this.root, {String pathPrefix})
       : _pathPrefixSegments = _parsePathPrefix(pathPrefix);
 
-  /**
-   * Serve a [Stream] of [HttpRequest]s, in this [VirtualDirectory].
-   */
+  /// Serve a [Stream] of [HttpRequest]s, in this [VirtualDirectory].
   StreamSubscription<HttpRequest> serve(Stream<HttpRequest> requests) =>
       requests.listen(serveRequest);
 
-  /**
-   * Serve a single [HttpRequest], in this [VirtualDirectory].
-   */
+  /// Serve a single [HttpRequest], in this [VirtualDirectory].
   Future serveRequest(HttpRequest request) {
     var iterator = request.uri.pathSegments.iterator;
     for (var segment in _pathPrefixSegments) {
@@ -116,35 +104,31 @@ class VirtualDirectory {
     });
   }
 
-  /**
-   * Set the [callback] to override the default directory listing. The
-   * [callback] will be called with the [Directory] to be listed and the
-   * [HttpRequest].
-   */
+  /// Set the [callback] to override the default directory listing. The
+  /// [callback] will be called with the [Directory] to be listed and the
+  /// [HttpRequest].
   set directoryHandler(void callback(Directory dir, HttpRequest request)) {
     _dirCallback = callback;
   }
 
-  /**
-   * Set the [callback] to override the error page handler. When [callback] is
-   * invoked, the `statusCode` property of the response is set.
-   */
+  /// Set the [callback] to override the error page handler. When [callback] is
+  /// invoked, the `statusCode` property of the response is set.
   set errorPageHandler(void callback(HttpRequest request)) {
     _errorCallback = callback;
   }
 
   Future _locateResource(String path, Iterator<String> segments) {
     // Don't allow navigating up paths.
-    if (segments.current == "..") return new Future.value(null);
+    if (segments.current == "..") return Future.value(null);
     path = normalize(path);
     // If we jail to root, the relative path can never go up.
-    if (jailRoot && split(path).first == "..") return new Future.value(null);
+    if (jailRoot && split(path).first == "..") return Future.value(null);
     String fullPath() => join(root, path);
     return FileSystemEntity.type(fullPath(), followLinks: false).then((type) {
       switch (type) {
         case FileSystemEntityType.file:
           if (segments.current == null) {
-            return new File(fullPath());
+            return File(fullPath());
           }
           break;
 
@@ -152,12 +136,12 @@ class VirtualDirectory {
           String dirFullPath() => '${fullPath()}$separator';
           var current = segments.current;
           if (current == null) {
-            if (path == '.') return new Directory(dirFullPath());
+            if (path == '.') return Directory(dirFullPath());
             return const _DirectoryRedirect();
           }
           var hasNext = segments.moveNext();
           if (!hasNext && current == "") {
-            return new Directory(dirFullPath());
+            return Directory(dirFullPath());
           } else {
             if (_invalidPathRegExp.hasMatch(current)) break;
             return _locateResource(join(path, current), segments);
@@ -166,7 +150,7 @@ class VirtualDirectory {
 
         case FileSystemEntityType.link:
           if (followLinks) {
-            return new Link(fullPath()).target().then((target) {
+            return Link(fullPath()).target().then((target) {
               var targetPath = normalize(target);
               if (isAbsolute(targetPath)) {
                 // If we jail to root, the path can never be absolute.
@@ -185,19 +169,17 @@ class VirtualDirectory {
     });
   }
 
-  /**
-   * Serve the content of [file] to [request].
-   *
-   * This is usefull when e.g. overriding [directoryHandler] to redirect to
-   * some index file.
-   *
-   * In the request contains the [HttpStatus.ifModifiedSince] header,
-   * [serveFile] will send a [HttpStatus.notModified] response if the file
-   * was not changed.
-   *
-   * Note that if it was unabled to read from [file], the [request]s response
-   * is closed with error-code [HttpStatus.notFound].
-   */
+  /// Serve the content of [file] to [request].
+  ///
+  /// This is useful when e.g. overriding [directoryHandler] to redirect to
+  /// some index file.
+  ///
+  /// In the request contains the [HttpHeaders.ifModifiedSince] header,
+  /// [serveFile] will send a [HttpStatus.notModified] response if the file
+  /// was not changed.
+  ///
+  /// Note that if it was unable to read from [file], the [request]s response
+  /// is closed with error-code [HttpStatus.notFound].
   void serveFile(File file, HttpRequest request) {
     var response = request.response;
     // TODO(ajohnsen): Set up Zone support for these errors.
@@ -216,7 +198,7 @@ class VirtualDirectory {
         var range = request.headers.value(HttpHeaders.rangeHeader);
         if (range != null) {
           // We only support one range, where the standard support several.
-          var matches = new RegExp(r"^bytes=(\d*)\-(\d*)$").firstMatch(range);
+          var matches = RegExp(r"^bytes=(\d*)\-(\d*)$").firstMatch(range);
           // If the range header have the right format, handle it.
           if (matches != null &&
               (matches[1].isNotEmpty || matches[2].isNotEmpty)) {
@@ -261,7 +243,7 @@ class VirtualDirectory {
               } else {
                 file
                     .openRead(start, end + 1)
-                    .pipe(new _VirtualDirectoryFileStream(response, file.path))
+                    .pipe(_VirtualDirectoryFileStream(response, file.path))
                     .catchError((_) {
                   // TODO(kevmoo): log errors
                 });
@@ -277,7 +259,7 @@ class VirtualDirectory {
         } else {
           file
               .openRead()
-              .pipe(new _VirtualDirectoryFileStream(response, file.path))
+              .pipe(_VirtualDirectoryFileStream(response, file.path))
               .catchError((_) {
             // TODO(kevmoo): log errors
           });
@@ -304,7 +286,7 @@ class VirtualDirectory {
       }
 
       response.headers.contentType =
-          new ContentType('text', 'html', parameters: {'charset': 'utf-8'});
+          ContentType('text', 'html', parameters: {'charset': 'utf-8'});
       response.headers.set(HttpHeaders.lastModifiedHeader, stats.modified);
       var path = Uri.decodeComponent(request.uri.path);
       var encodedPath = const HtmlEscape().convert(path);
@@ -387,7 +369,7 @@ $server
       return;
     }
     response.headers.contentType =
-        new ContentType('text', 'html', parameters: {'charset': 'utf-8'});
+        ContentType('text', 'html', parameters: {'charset': 'utf-8'});
     // Default error page.
     var path = Uri.decodeComponent(request.uri.path);
     var encodedPath = const HtmlEscape().convert(path);
@@ -455,7 +437,7 @@ class _VirtualDirectoryFileStream extends StreamConsumer<List<int>> {
     return response.done;
   }
 
-  Future close() => new Future.value();
+  Future close() => Future.value();
 
   void setMimeType(List<int> bytes) {
     var mimeType = lookupMimeType(path, headerBytes: bytes);
