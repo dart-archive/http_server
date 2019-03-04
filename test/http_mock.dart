@@ -170,7 +170,7 @@ class MockHttpResponse implements HttpResponse {
     // doesn't seem to be hit...hmm...
   }
 
-  Future redirect(Uri location, {int status = HttpStatus.movedPermanently}) {
+  Future redirect(Uri location, {int status = HttpStatus.movedTemporarily}) {
     statusCode = status;
     headers.set(HttpHeaders.locationHeader, location.toString());
     return close();
