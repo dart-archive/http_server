@@ -16,8 +16,8 @@ class _DirectoryRedirect {
   const _DirectoryRedirect();
 }
 
-typedef dynamic _DirCallback(Directory dir, HttpRequest request);
-typedef dynamic _ErrorCallback(HttpRequest request);
+typedef _DirCallback = dynamic Function(Directory dir, HttpRequest request);
+typedef _ErrorCallback = dynamic Function(HttpRequest request);
 
 /// A [VirtualDirectory] can serve files and directory-listing from a root path,
 /// to [HttpRequest]s.
