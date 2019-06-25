@@ -1,3 +1,7 @@
+# 0.9.8+2
+
+* Prepare for `File.openRead()` SDK change in signature.
+
 # 0.9.8+1
 
 * Fix a Dart 2 type issue.

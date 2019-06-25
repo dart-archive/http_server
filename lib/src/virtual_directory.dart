@@ -243,6 +243,7 @@ class VirtualDirectory {
               } else {
                 file
                     .openRead(start, end + 1)
+                    .cast<List<int>>()
                     .pipe(_VirtualDirectoryFileStream(response, file.path))
                     .catchError((_) {
                   // TODO(kevmoo): log errors
@@ -259,6 +260,7 @@ class VirtualDirectory {
         } else {
           file
               .openRead()
+              .cast<List<int>>()
               .pipe(_VirtualDirectoryFileStream(response, file.path))
               .catchError((_) {
             // TODO(kevmoo): log errors
