@@ -88,16 +88,15 @@ class HttpBodyHandlerImpl {
       var charset = contentType.charset;
       if (charset != null) encoding = Encoding.getByName(charset);
       encoding ??= defaultEncoding;
-      return stream
-          .transform(encoding.decoder)
+      return encoding.decoder
+          .bind(stream)
           .fold(StringBuffer(), (buffer, data) => buffer..write(data))
           .then((buffer) => _HttpBody("text", buffer.toString()));
     }
 
     Future<HttpBody> asFormData() {
-      return stream
-          .transform(
-              MimeMultipartTransformer(contentType.parameters['boundary']))
+      return MimeMultipartTransformer(contentType.parameters['boundary'])
+          .bind(stream)
           .map((part) => HttpMultipartFormData.parse(part,
               defaultEncoding: defaultEncoding))
           .map((multipart) {

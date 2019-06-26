@@ -64,8 +64,8 @@ Future _postDataTest(List<int> message, String contentType, String boundary,
 
   server.listen((request) {
     var boundary = request.headers.contentType.parameters['boundary'];
-    request
-        .transform(MimeMultipartTransformer(boundary))
+    MimeMultipartTransformer(boundary)
+        .bind(request)
         .map((part) =>
             HttpMultipartFormData.parse(part, defaultEncoding: defaultEncoding))
         .map((multipart) {

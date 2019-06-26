@@ -249,7 +249,7 @@ Future<String> _getAsString(int port, String path) {
   return client
       .get('localhost', port, path)
       .then((request) => request.close())
-      .then((response) => utf8.decodeStream(response))
+      .then((response) => utf8.decodeStream(response.cast<List<int>>()))
       .whenComplete(() => client.close());
 }
 

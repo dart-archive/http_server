@@ -1,3 +1,8 @@
+# 0.9.8+3
+
+* Prepare for `HttpClientResponse` SDK change (implements `Stream<Uint8List>`
+  rather than `Stream<List<int>>`).
+
 # 0.9.8+2
 
 * Prepare for `File.openRead()` SDK change in signature.
