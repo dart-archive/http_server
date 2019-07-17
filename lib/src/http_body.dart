@@ -95,7 +95,7 @@ import 'http_body_impl.dart';
 ///
 class HttpBodyHandler
     extends StreamTransformerBase<HttpRequest, HttpRequestBody> {
-  HttpBodyHandlerTransformer _transformer;
+  final HttpBodyHandlerTransformer _transformer;
 
   /// Create a new [HttpBodyHandler] to be used with a [Stream]<[HttpRequest]>,
   /// e.g. a [HttpServer].
