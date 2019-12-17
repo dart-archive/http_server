@@ -194,13 +194,16 @@ class _HttpBodyFileUpload implements HttpBodyFileUpload {
 }
 
 class _HttpBody implements HttpBody {
+  @override
   final String type;
+  @override
   final dynamic body;
 
   _HttpBody(this.type, this.body);
 }
 
 class _HttpRequestBody extends _HttpBody implements HttpRequestBody {
+  @override
   final HttpRequest request;
 
   _HttpRequestBody(this.request, HttpBody body) : super(body.type, body.body);
@@ -208,6 +211,7 @@ class _HttpRequestBody extends _HttpBody implements HttpRequestBody {
 
 class _HttpClientResponseBody extends _HttpBody
     implements HttpClientResponseBody {
+  @override
   final HttpClientResponse response;
 
   _HttpClientResponseBody(this.response, HttpBody body)

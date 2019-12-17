@@ -99,6 +99,7 @@ class HttpMultipartFormDataImpl extends Stream
         onDone: onDone, onError: onError, cancelOnError: cancelOnError);
   }
 
+  @override
   String value(String name) {
     return _mimeMultipart.headers[name];
   }

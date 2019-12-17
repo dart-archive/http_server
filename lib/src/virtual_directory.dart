@@ -440,6 +440,7 @@ class _VirtualDirectoryFileStream extends StreamConsumer<List<int>> {
     return response.done;
   }
 
+  @override
   Future close() => Future.value();
 
   void setMimeType(List<int> bytes) {

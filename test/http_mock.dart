@@ -51,7 +51,7 @@ class MockHttpHeaders implements HttpHeaders {
     var values = _headers[name];
     if (values == null) return null;
     if (values.length > 1) {
-      throw HttpException("More than one value for header $name");
+      throw HttpException('More than one value for header $name');
     }
     return values[0];
   }
@@ -67,7 +67,7 @@ class MockHttpHeaders implements HttpHeaders {
       } else if (value is String) {
         _set(HttpHeaders.ifModifiedSinceHeader, value);
       } else {
-        throw HttpException("Unexpected type for header named $name");
+        throw HttpException('Unexpected type for header named $name');
       }
     } else {
       _addValue(name, value);
@@ -146,6 +146,7 @@ class MockHttpRequest implements HttpRequest {
 }
 
 class MockHttpResponse implements HttpResponse {
+  @override
   final HttpHeaders headers = MockHttpHeaders();
   final Completer _completer = Completer();
   final List<int> _buffer = <int>[];
@@ -161,35 +162,44 @@ class MockHttpResponse implements HttpResponse {
 
   bool _isDone = false;
 
+  @override
   int statusCode = HttpStatus.ok;
 
+  @override
   String get reasonPhrase => _findReasonPhrase(statusCode);
 
+  @override
   set reasonPhrase(String value) {
     _reasonPhrase = value;
   }
 
+  @override
   Future get done => _doneFuture;
 
+  @override
   Future close() {
     _completer.complete();
     return _doneFuture;
   }
 
+  @override
   void add(List<int> data) {
     _buffer.addAll(data);
   }
 
+  @override
   void addError(error, [StackTrace stackTrace]) {
     // doesn't seem to be hit...hmm...
   }
 
+  @override
   Future redirect(Uri location, {int status = HttpStatus.movedTemporarily}) {
     statusCode = status;
     headers.set(HttpHeaders.locationHeader, location.toString());
     return close();
   }
 
+  @override
   void write(Object obj) {
     var str = obj.toString();
     add(utf8.encode(str));
@@ -198,6 +208,7 @@ class MockHttpResponse implements HttpResponse {
   /*
    * Implemented to remove editor warnings
    */
+  @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 
   String get mockContent => utf8.decode(_buffer);
@@ -215,9 +226,9 @@ class MockHttpResponse implements HttpResponse {
 
     switch (statusCode) {
       case HttpStatus.notFound:
-        return "Not Found";
+        return 'Not Found';
       default:
-        return "Status $statusCode";
+        return 'Status $statusCode';
     }
   }
 }
