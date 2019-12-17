@@ -9,7 +9,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:mirrors';
 
-import "package:test/test.dart";
+import 'package:test/test.dart';
 import 'package:test_api/src/backend/invoker.dart';
 
 import 'package:http_server/http_server.dart';
@@ -24,12 +24,13 @@ SecurityContext clientContext;
 ///  Used to flag a given test case as being a mock or not.
 final _isMockTestExpando = Expando<bool>('isMockTest');
 
-void testVirtualDir(String name, Future func(Directory dir)) {
+void testVirtualDir(String name, Future<void> Function(Directory) func) {
   _testVirtualDir(name, false, func);
   _testVirtualDir(name, true, func);
 }
 
-void _testVirtualDir(String name, bool useMocks, Future func(Directory dir)) {
+void _testVirtualDir(
+    String name, bool useMocks, Future<void> Function(Directory) func) {
   if (useMocks) {
     name = '$name, with mocks';
   }
@@ -221,7 +222,7 @@ Future<MockHttpResponse> _withMockRequest(
 }
 
 Future<T> _withServer<T>(
-    VirtualDirectory virDir, Future<T> func(int port)) async {
+    VirtualDirectory virDir, Future<T> Function(int port) func) async {
   var server = await HttpServer.bind('localhost', 0);
 
   try {

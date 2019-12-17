@@ -8,11 +8,14 @@ import 'dart:io';
 class MockHttpHeaders implements HttpHeaders {
   final Map<String, List<String>> _headers = HashMap<String, List<String>>();
 
-  operator [](key) => _headers[key];
+  @override
+  List<String> operator [](key) => _headers[key];
 
+  @override
   int get contentLength =>
       int.parse(_headers[HttpHeaders.contentLengthHeader][0]);
 
+  @override
   DateTime get ifModifiedSince {
     var values = _headers[HttpHeaders.ifModifiedSinceHeader];
     if (values != null) {
@@ -25,20 +28,24 @@ class MockHttpHeaders implements HttpHeaders {
     return null;
   }
 
+  @override
   set ifModifiedSince(DateTime ifModifiedSince) {
     // Format "ifModifiedSince" header with date in Greenwich Mean Time (GMT).
     var formatted = HttpDate.format(ifModifiedSince.toUtc());
     _set(HttpHeaders.ifModifiedSinceHeader, formatted);
   }
 
+  @override
   ContentType contentType;
 
+  @override
   void set(String name, Object value) {
     name = name.toLowerCase();
     _headers.remove(name);
     _addAll(name, value);
   }
 
+  @override
   String value(String name) {
     name = name.toLowerCase();
     var values = _headers[name];
@@ -49,6 +56,7 @@ class MockHttpHeaders implements HttpHeaders {
     return values[0];
   }
 
+  @override
   String toString() => '$runtimeType : $_headers';
 
   // [name] must be a lower-case version of the name.
@@ -99,6 +107,7 @@ class MockHttpHeaders implements HttpHeaders {
   /*
    * Implemented to remove editor warnings
    */
+  @override
   dynamic noSuchMethod(Invocation invocation) {
     print([
       invocation.memberName,
@@ -112,9 +121,13 @@ class MockHttpHeaders implements HttpHeaders {
 }
 
 class MockHttpRequest implements HttpRequest {
+  @override
   final Uri uri;
+  @override
   final MockHttpResponse response = MockHttpResponse();
+  @override
   final HttpHeaders headers = MockHttpHeaders();
+  @override
   final String method = 'GET';
   final bool followRedirects;
 
@@ -128,6 +141,7 @@ class MockHttpRequest implements HttpRequest {
   /*
    * Implemented to remove editor warnings
    */
+  @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 
