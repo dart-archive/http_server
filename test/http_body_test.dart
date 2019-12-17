@@ -12,7 +12,7 @@ void _testHttpClientResponseBody() {
   void test(
       String mimeType, List<int> content, dynamic expectedBody, String type,
       [bool shouldFail = false]) {
-    HttpServer.bind("localhost", 0).then((server) {
+    HttpServer.bind('localhost', 0).then((server) {
       server.listen((request) {
         request.listen((_) {}, onDone: () {
           request.response.headers.contentType = ContentType.parse(mimeType);
@@ -23,7 +23,7 @@ void _testHttpClientResponseBody() {
 
       var client = HttpClient();
       client
-          .get("localhost", server.port, "/")
+          .get('localhost', server.port, '/')
           .then((request) => request.close())
           .then(HttpBodyHandler.processResponse)
           .then((body) {
@@ -31,13 +31,13 @@ void _testHttpClientResponseBody() {
         expect(body.type, equals(type));
         expect(body.response, isNotNull);
         switch (type) {
-          case "text":
-          case "json":
+          case 'text':
+          case 'json':
             expect(body.body, equals(expectedBody));
             break;
 
           default:
-            fail("bad body type");
+            fail('bad body type');
         }
       }, onError: (error) {
         if (!shouldFail) throw error;
@@ -48,23 +48,23 @@ void _testHttpClientResponseBody() {
     });
   }
 
-  test("text/plain", "body".codeUnits, "body", "text");
-  test("text/plain; charset=utf-8", "body".codeUnits, "body", "text");
-  test("text/plain; charset=iso-8859-1", "body".codeUnits, "body", "text");
-  test("text/plain; charset=us-ascii", "body".codeUnits, "body", "text");
-  test("text/plain; charset=utf-8", [42], "*", "text");
-  test("text/plain; charset=us-ascii", [142], null, "text", true);
-  test("text/plain; charset=utf-8", [142], null, "text", true);
+  test('text/plain', 'body'.codeUnits, 'body', 'text');
+  test('text/plain; charset=utf-8', 'body'.codeUnits, 'body', 'text');
+  test('text/plain; charset=iso-8859-1', 'body'.codeUnits, 'body', 'text');
+  test('text/plain; charset=us-ascii', 'body'.codeUnits, 'body', 'text');
+  test('text/plain; charset=utf-8', [42], '*', 'text');
+  test('text/plain; charset=us-ascii', [142], null, 'text', true);
+  test('text/plain; charset=utf-8', [142], null, 'text', true);
 
-  test("application/json", '{"val": 5}'.codeUnits, {"val": 5}, "json");
-  test("application/json", '{ bad json }'.codeUnits, null, "json", true);
+  test('application/json', '{"val": 5}'.codeUnits, {'val': 5}, 'json');
+  test('application/json', '{ bad json }'.codeUnits, null, 'json', true);
 }
 
 void _testHttpServerRequestBody() {
   void test(
       String mimeType, List<int> content, dynamic expectedBody, String type,
       {bool shouldFail = false, Encoding defaultEncoding = utf8}) {
-    HttpServer.bind("localhost", 0).then((server) {
+    HttpServer.bind('localhost', 0).then((server) {
       server
           .transform(HttpBodyHandler(defaultEncoding: defaultEncoding))
           .listen((body) {
@@ -72,24 +72,24 @@ void _testHttpServerRequestBody() {
         expect(shouldFail, isFalse);
         expect(body.type, equals(type));
         switch (type) {
-          case "text":
+          case 'text':
             expect(body.request.headers.contentType.mimeType,
-                equals("text/plain"));
+                equals('text/plain'));
             expect(body.body, equals(expectedBody));
             break;
 
-          case "json":
+          case 'json':
             expect(body.request.headers.contentType.mimeType,
-                equals("application/json"));
+                equals('application/json'));
             expect(body.body, equals(expectedBody));
             break;
 
-          case "binary":
+          case 'binary':
             expect(body.request.headers.contentType, isNull);
             expect(body.body, equals(expectedBody));
             break;
 
-          case "form":
+          case 'form':
             var mimeType = body.request.headers.contentType.mimeType;
             expect(
                 mimeType,
@@ -111,7 +111,7 @@ void _testHttpServerRequestBody() {
             break;
 
           default:
-            throw StateError("bad body type");
+            throw StateError('bad body type');
         }
         body.request.response.close();
       }, onError: (error) {
@@ -119,7 +119,7 @@ void _testHttpServerRequestBody() {
       });
 
       var client = HttpClient();
-      client.post("localhost", server.port, "/").then((request) {
+      client.post('localhost', server.port, '/').then((request) {
         if (mimeType != null) {
           request.headers.contentType = ContentType.parse(mimeType);
         }
@@ -139,20 +139,20 @@ void _testHttpServerRequestBody() {
     });
   }
 
-  test("text/plain", "body".codeUnits, "body", "text");
-  test("text/plain; charset=utf-8", "body".codeUnits, "body", "text");
-  test("text/plain; charset=utf-8", [42], "*", "text");
-  test("text/plain; charset=us-ascii", [142], null, "text", shouldFail: true);
-  test("text/plain; charset=utf-8", [142], null, "text", shouldFail: true);
+  test('text/plain', 'body'.codeUnits, 'body', 'text');
+  test('text/plain; charset=utf-8', 'body'.codeUnits, 'body', 'text');
+  test('text/plain; charset=utf-8', [42], '*', 'text');
+  test('text/plain; charset=us-ascii', [142], null, 'text', shouldFail: true);
+  test('text/plain; charset=utf-8', [142], null, 'text', shouldFail: true);
 
-  test("application/json", '{"val": 5}'.codeUnits, {"val": 5}, "json");
-  test("application/json", '{ bad json }'.codeUnits, null, "json",
+  test('application/json', '{"val": 5}'.codeUnits, {'val': 5}, 'json');
+  test('application/json', '{ bad json }'.codeUnits, null, 'json',
       shouldFail: true);
 
-  test(null, "body".codeUnits, "body".codeUnits, "binary");
+  test(null, 'body'.codeUnits, 'body'.codeUnits, 'binary');
 
   test(
-      "multipart/form-data; boundary=AaB03x",
+      'multipart/form-data; boundary=AaB03x',
       '''
 --AaB03x\r
 Content-Disposition: form-data; name="name"\r
@@ -160,11 +160,11 @@ Content-Disposition: form-data; name="name"\r
 Larry\r
 --AaB03x--\r\n'''
           .codeUnits,
-      {"name": "Larry"},
-      "form");
+      {'name': 'Larry'},
+      'form');
 
   test(
-      "multipart/form-data; boundary=AaB03x",
+      'multipart/form-data; boundary=AaB03x',
       '''
 --AaB03x\r
 Content-Disposition: form-data; name="files"; filename="myfile"\r
@@ -174,16 +174,16 @@ File content\r
 --AaB03x--\r\n'''
           .codeUnits,
       {
-        "files": {
+        'files': {
           'filename': 'myfile',
           'contentType': 'application/octet-stream',
           'content': 'File content'.codeUnits
         }
       },
-      "form");
+      'form');
 
   test(
-      "multipart/form-data; boundary=AaB03x",
+      'multipart/form-data; boundary=AaB03x',
       '''
 --AaB03x\r
 Content-Disposition: form-data; name="files"; filename="myfile"\r
@@ -198,16 +198,16 @@ File content\r
 --AaB03x--\r\n'''
           .codeUnits,
       {
-        "files": {
+        'files': {
           'filename': 'myfile',
           'contentType': 'text/plain',
           'content': 'File content'
         }
       },
-      "form");
+      'form');
 
   test(
-      "multipart/form-data; boundary=AaB03x",
+      'multipart/form-data; boundary=AaB03x',
       '''
 --AaB03x\r
 Content-Disposition: form-data; name="files"; filename="myfile"\r
@@ -217,13 +217,13 @@ File content\r
 --AaB03x--\r\n'''
           .codeUnits,
       {
-        "files": {
+        'files': {
           'filename': 'myfile',
           'contentType': 'application/json',
           'content': 'File content'
         }
       },
-      "form");
+      'form');
 
   test(
       'application/x-www-form-urlencoded',
@@ -231,61 +231,61 @@ File content\r
               '=%E5%B9%B3%E4%BB%AE%E5%90%8D'
           .codeUnits,
       {'平=仮名': '平仮名', 'b': '平仮名'},
-      "form");
+      'form');
 
   test('application/x-www-form-urlencoded', 'a=%F8+%26%23548%3B'.codeUnits,
-      null, "form",
+      null, 'form',
       shouldFail: true);
 
-  test('application/x-www-form-urlencoded', 'a=%C0%A0'.codeUnits, null, "form",
+  test('application/x-www-form-urlencoded', 'a=%C0%A0'.codeUnits, null, 'form',
       shouldFail: true);
 
-  test('application/x-www-form-urlencoded', 'a=x%A0x'.codeUnits, null, "form",
+  test('application/x-www-form-urlencoded', 'a=x%A0x'.codeUnits, null, 'form',
       shouldFail: true);
 
-  test('application/x-www-form-urlencoded', 'a=x%C0x'.codeUnits, null, "form",
+  test('application/x-www-form-urlencoded', 'a=x%C0x'.codeUnits, null, 'form',
       shouldFail: true);
 
   test('application/x-www-form-urlencoded', 'a=%C3%B8+%C8%A4'.codeUnits,
-      {'a': 'ø Ȥ'}, "form");
+      {'a': 'ø Ȥ'}, 'form');
 
   test('application/x-www-form-urlencoded', 'a=%F8+%26%23548%3B'.codeUnits,
-      {'a': 'ø &#548;'}, "form",
+      {'a': 'ø &#548;'}, 'form',
       defaultEncoding: latin1);
 
   test('application/x-www-form-urlencoded', 'name=%26'.codeUnits, {'name': '&'},
-      "form",
+      'form',
       defaultEncoding: latin1);
 
   test('application/x-www-form-urlencoded', 'name=%F8%26'.codeUnits,
-      {'name': 'ø&'}, "form",
+      {'name': 'ø&'}, 'form',
       defaultEncoding: latin1);
 
   test('application/x-www-form-urlencoded', 'name=%26%3B'.codeUnits,
-      {'name': '&;'}, "form",
+      {'name': '&;'}, 'form',
       defaultEncoding: latin1);
 
   test(
       'application/x-www-form-urlencoded',
       'name=%26%23548%3B%26%23548%3B'.codeUnits,
       {'name': '&#548;&#548;'},
-      "form",
+      'form',
       defaultEncoding: latin1);
 
   test('application/x-www-form-urlencoded', 'name=%26'.codeUnits, {'name': '&'},
-      "form");
+      'form');
 
   test('application/x-www-form-urlencoded', 'name=%C3%B8%26'.codeUnits,
-      {'name': 'ø&'}, "form");
+      {'name': 'ø&'}, 'form');
 
   test('application/x-www-form-urlencoded', 'name=%26%3B'.codeUnits,
-      {'name': '&;'}, "form");
+      {'name': '&;'}, 'form');
 
   test('application/x-www-form-urlencoded', 'name=%C8%A4%26%23548%3B'.codeUnits,
-      {'name': 'Ȥ&#548;'}, "form");
+      {'name': 'Ȥ&#548;'}, 'form');
 
   test('application/x-www-form-urlencoded', 'name=%C8%A4%C8%A4'.codeUnits,
-      {'name': 'ȤȤ'}, "form");
+      {'name': 'ȤȤ'}, 'form');
 }
 
 void main() {

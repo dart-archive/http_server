@@ -14,8 +14,11 @@ import 'http_multipart_form_data.dart';
 
 class HttpMultipartFormDataImpl extends Stream
     implements HttpMultipartFormData {
+  @override
   final ContentType contentType;
+  @override
   final HeaderValue contentDisposition;
+  @override
   final HeaderValue contentTransferEncoding;
 
   final MimeMultipart _mimeMultipart;
@@ -33,8 +36,8 @@ class HttpMultipartFormDataImpl extends Stream
     _stream = _mimeMultipart;
     if (contentTransferEncoding != null) {
       // TODO(ajohnsen): Support BASE64, etc.
-      throw HttpException("Unsupported contentTransferEncoding: "
-          "${contentTransferEncoding.value}");
+      throw HttpException('Unsupported contentTransferEncoding: '
+          '${contentTransferEncoding.value}');
     }
 
     if (contentType == null ||
@@ -50,7 +53,9 @@ class HttpMultipartFormDataImpl extends Stream
     }
   }
 
+  @override
   bool get isText => _isText;
+  @override
   bool get isBinary => !_isText;
 
   static HttpMultipartFormData parse(
@@ -87,12 +92,14 @@ class HttpMultipartFormDataImpl extends Stream
         type, disposition, encoding, multipart, defaultEncoding);
   }
 
-  StreamSubscription listen(void onData(data),
-      {void onDone(), Function onError, bool cancelOnError}) {
+  @override
+  StreamSubscription listen(void Function(dynamic) onData,
+      {void Function() onDone, Function onError, bool cancelOnError}) {
     return _stream.listen(onData,
         onDone: onDone, onError: onError, cancelOnError: cancelOnError);
   }
 
+  @override
   String value(String name) {
     return _mimeMultipart.headers[name];
   }

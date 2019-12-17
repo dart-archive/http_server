@@ -5,8 +5,8 @@
 import 'dart:async';
 import 'dart:io';
 
-import "package:test/test.dart";
-import "package:http_server/http_server.dart";
+import 'package:test/test.dart';
+import 'package:http_server/http_server.dart';
 
 import 'utils.dart';
 

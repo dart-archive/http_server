@@ -52,6 +52,7 @@ class _VirtualHost implements VirtualHost {
   final _VirtualHostDomain _topDomain = _VirtualHostDomain();
   StreamController<HttpRequest> _unhandledController;
 
+  @override
   Stream<HttpRequest> get unhandled {
     _unhandledController ??= StreamController<HttpRequest>();
 
@@ -62,6 +63,7 @@ class _VirtualHost implements VirtualHost {
     if (source != null) addSource(source);
   }
 
+  @override
   void addSource(Stream<HttpRequest> source) {
     source.listen((request) {
       var host = request.headers.host;
@@ -95,6 +97,7 @@ class _VirtualHost implements VirtualHost {
     });
   }
 
+  @override
   Stream<HttpRequest> addHost(String host) {
     if (host.lastIndexOf('*') > 0) {
       throw ArgumentError(
