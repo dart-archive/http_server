@@ -1,8 +1,8 @@
 # 0.10.0
 
-* Preparation for [HttpHeaders change]. Update signature of `add()`
-  and `set()` to match new signature of `HttpHeaders`. The
-  parameter is not yet forwarded and will not behave as expected.
+* Preparation for [HttpHeaders change]. Update signature of `set()` to match
+  new signature of `HttpHeaders`. The parameter is not yet forwarded and
+  will not behave as expected.
 
   [HttpHeaders change]: https://github.com/dart-lang/sdk/issues/39657
 
