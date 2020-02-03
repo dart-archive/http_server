@@ -41,7 +41,7 @@ class MockHttpHeaders implements HttpHeaders {
 
   @override
   void set(String name, Object value, {bool preserveHeaderCase = false}) {
-    // The name is determined by the lastest `set` call.
+    // The casing of Header name is determined by the latest `set` call.
     if (preserveHeaderCase) {
       _originalHeaderName[name.toLowerCase()] = name;
     } else {
