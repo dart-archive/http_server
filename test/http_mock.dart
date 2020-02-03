@@ -7,6 +7,7 @@ import 'dart:io';
 
 class MockHttpHeaders implements HttpHeaders {
   final Map<String, List<String>> _headers = HashMap<String, List<String>>();
+  final Map<String, String> _originalHeaderName = HashMap<String, String>();
 
   @override
   List<String> operator [](key) => _headers[key];
@@ -39,8 +40,14 @@ class MockHttpHeaders implements HttpHeaders {
   ContentType contentType;
 
   @override
-  void set(String name, Object value) {
-    name = name.toLowerCase();
+  void set(String name, Object value, {bool preserveHeaderCase = false}) {
+    // The name is determined by the lastest `set` call.
+    if (preserveHeaderCase) {
+      _originalHeaderName[name.toLowerCase()] = name;
+    } else {
+      name = name.toLowerCase();
+      _originalHeaderName[name] = name;
+    }
     _headers.remove(name);
     _addAll(name, value);
   }
@@ -57,7 +64,11 @@ class MockHttpHeaders implements HttpHeaders {
   }
 
   @override
-  String toString() => '$runtimeType : $_headers';
+  String toString() {
+    var map = {};
+    _headers.forEach((k,v) => map[_originalHeaderName[k]] = v);
+    return '$runtimeType : $map';
+  }
 
   // [name] must be a lower-case version of the name.
   void _add(String name, value) {

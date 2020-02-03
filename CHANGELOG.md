@@ -1,3 +1,11 @@
+# 0.10.0
+
+* Preparation for [HttpHeaders change]. Update signature of `add()`
+  and `set()` to match new signature of `HttpHeaders`. The
+  parameter is not yet forwarded and will not behave as expected.
+
+  [HttpHeaders change]: https://github.com/dart-lang/sdk/issues/39657
+
 # 0.9.8+3
 
 * Prepare for `HttpClientResponse` SDK change (implements `Stream<Uint8List>`

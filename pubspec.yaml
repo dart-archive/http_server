@@ -1,5 +1,5 @@
 name: http_server
-version: 0.9.8+4-dev
+version: 0.10.0
 description: Library of HTTP server classes.
 homepage: https://www.github.com/dart-lang/http_server
 
