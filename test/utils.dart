@@ -12,15 +12,15 @@ import 'package:test_api/src/backend/invoker.dart';
 
 import 'package:http_server/http_server.dart';
 
-import 'http_mock.dart';
+import 'http_fakes.dart';
 
 Object get currentTestCase => Invoker.current.liveTest;
 
 SecurityContext serverContext;
 SecurityContext clientContext;
 
-///  Used to flag a given test case as being a mock or not.
-final _isMockTestExpando = Expando<bool>('isMockTest');
+///  Used to flag a given test case as being a fake or not.
+final _isFakeTestExpando = Expando<bool>('isFakeTest');
 
 void testVirtualDir(String name, Future<void> Function(Directory) func) {
   _testVirtualDir(name, false, func);
@@ -28,14 +28,14 @@ void testVirtualDir(String name, Future<void> Function(Directory) func) {
 }
 
 void _testVirtualDir(
-    String name, bool useMocks, Future<void> Function(Directory) func) {
-  if (useMocks) {
-    name = '$name, with mocks';
+    String name, bool useFakes, Future<void> Function(Directory) func) {
+  if (useFakes) {
+    name = '$name, with fakes';
   }
 
   test(name, () async {
     // see subsequent access to this expando below
-    _isMockTestExpando[currentTestCase] = useMocks;
+    _isFakeTestExpando[currentTestCase] = useFakes;
 
     var dir = Directory.systemTemp.createTempSync('http_server_virtual_');
 
@@ -47,7 +47,7 @@ void _testVirtualDir(
   });
 }
 
-Future<int> getStatusCodeForVirtDir(VirtualDirectory virtualDir, String path,
+Future<int> statusCodeForVirtDir(VirtualDirectory virtualDir, String path,
     {String host,
     bool secure = false,
     DateTime ifModifiedSince,
@@ -55,23 +55,23 @@ Future<int> getStatusCodeForVirtDir(VirtualDirectory virtualDir, String path,
     bool followRedirects = true,
     int from,
     int to}) {
-  // if this is a mock test, then run the mock code path
-  if (_isMockTestExpando[currentTestCase]) {
-    var uri = _getUri(0, path, secure: secure, rawPath: rawPath);
+  // if this is a fake test, then run the fake code path
+  if (_isFakeTestExpando[currentTestCase]) {
+    var uri = _localhostUri(0, path, secure: secure, rawPath: rawPath);
 
-    var request = MockHttpRequest(uri,
+    var request = FakeHttpRequest(uri,
         followRedirects: followRedirects, ifModifiedSince: ifModifiedSince);
     _addRangeHeader(request, from, to);
 
-    return _withMockRequest(virtualDir, request).then((response) {
+    return _withFakeRequest(virtualDir, request).then((response) {
       return response.statusCode;
     });
   }
 
-  assert(_isMockTestExpando[currentTestCase] == false);
+  assert(_isFakeTestExpando[currentTestCase] == false);
 
   return _withServer(virtualDir, (port) {
-    return getStatusCode(port, path,
+    return fetchStatusCode(port, path,
         host: host,
         secure: secure,
         ifModifiedSince: ifModifiedSince,
@@ -82,7 +82,7 @@ Future<int> getStatusCodeForVirtDir(VirtualDirectory virtualDir, String path,
   });
 }
 
-Future<int> getStatusCode(int port, String path,
+Future<int> fetchStatusCode(int port, String path,
     {String host,
     bool secure = false,
     DateTime ifModifiedSince,
@@ -90,7 +90,7 @@ Future<int> getStatusCode(int port, String path,
     bool followRedirects = true,
     int from,
     int to}) async {
-  var uri = _getUri(port, path, secure: secure, rawPath: rawPath);
+  var uri = _localhostUri(port, path, secure: secure, rawPath: rawPath);
 
   HttpClient client;
   if (secure) {
@@ -116,94 +116,94 @@ Future<int> getStatusCode(int port, String path,
   }
 }
 
-Future<HttpHeaders> getHeaders(VirtualDirectory virDir, String path,
+Future<HttpHeaders> fetchHEaders(VirtualDirectory virDir, String path,
     {int from, int to}) {
-  // if this is a mock test, then run the mock code path
-  if (_isMockTestExpando[currentTestCase]) {
-    var uri = _getUri(0, path);
+  // if this is a fake test, then run the fake code path
+  if (_isFakeTestExpando[currentTestCase]) {
+    var uri = _localhostUri(0, path);
 
-    var request = MockHttpRequest(uri);
+    var request = FakeHttpRequest(uri);
     _addRangeHeader(request, from, to);
 
-    return _withMockRequest(virDir, request).then((response) {
+    return _withFakeRequest(virDir, request).then((response) {
       return response.headers;
     });
   }
 
-  assert(_isMockTestExpando[currentTestCase] == false);
+  assert(_isFakeTestExpando[currentTestCase] == false);
 
   return _withServer(virDir, (port) {
-    return _getHeaders(port, path, from, to);
+    return _headers(port, path, from, to);
   });
 }
 
-Future<String> getAsString(VirtualDirectory virtualDir, String path) {
-  // if this is a mock test, then run the mock code path
-  if (_isMockTestExpando[currentTestCase]) {
-    var uri = _getUri(0, path);
+Future<String> fetchAsString(VirtualDirectory virtualDir, String path) {
+  // if this is a fake test, then run the fake code path
+  if (_isFakeTestExpando[currentTestCase]) {
+    var uri = _localhostUri(0, path);
 
-    var request = MockHttpRequest(uri);
+    var request = FakeHttpRequest(uri);
 
-    return _withMockRequest(virtualDir, request).then((response) {
-      return response.mockContent;
+    return _withFakeRequest(virtualDir, request).then((response) {
+      return response.fakeContent;
     });
   }
 
-  assert(_isMockTestExpando[currentTestCase] == false);
+  assert(_isFakeTestExpando[currentTestCase] == false);
 
   return _withServer(virtualDir, (int port) {
-    return _getAsString(port, path);
+    return _fetchAsString(port, path);
   });
 }
 
-Future<List<int>> getAsBytes(VirtualDirectory virtualDir, String path,
+Future<List<int>> fetchAsBytes(VirtualDirectory virtualDir, String path,
     {int from, int to}) {
-  // if this is a mock test, then run the mock code path
-  if (_isMockTestExpando[currentTestCase]) {
-    var uri = _getUri(0, path);
+  // if this is a fake test, then run the fake code path
+  if (_isFakeTestExpando[currentTestCase]) {
+    var uri = _localhostUri(0, path);
 
-    var request = MockHttpRequest(uri);
+    var request = FakeHttpRequest(uri);
     _addRangeHeader(request, from, to);
 
-    return _withMockRequest(virtualDir, request).then((response) {
-      return response.mockContentBinary;
+    return _withFakeRequest(virtualDir, request).then((response) {
+      return response.fakeContentBinary;
     });
   }
 
-  assert(_isMockTestExpando[currentTestCase] == false);
+  assert(_isFakeTestExpando[currentTestCase] == false);
 
   return _withServer(virtualDir, (int port) {
-    return _getAsBytes(port, path, from, to);
+    return _fetchAsBytes(port, path, from, to);
   });
 }
 
-Future<List> getContentAndResponse(VirtualDirectory virtualDir, String path,
+Future<List> fetchContentAndResponse(VirtualDirectory virtualDir, String path,
     {int from, int to}) {
-  // if this is a mock test, then run the mock code path
-  if (_isMockTestExpando[currentTestCase]) {
-    var uri = _getUri(0, path);
+  // if this is a fake test, then run the fake code path
+  if (_isFakeTestExpando[currentTestCase]) {
+    var uri = _localhostUri(0, path);
 
-    var request = MockHttpRequest(uri);
+    var request = FakeHttpRequest(uri);
     _addRangeHeader(request, from, to);
 
-    return _withMockRequest(virtualDir, request).then((response) {
-      return [response.mockContentBinary, response];
+    return _withFakeRequest(virtualDir, request).then((response) {
+      return [response.fakeContentBinary, response];
     });
   }
 
-  assert(_isMockTestExpando[currentTestCase] == false);
+  assert(_isFakeTestExpando[currentTestCase] == false);
 
   return _withServer(virtualDir, (int port) {
-    return _getContentAndResponse(port, path, from, to);
+    return _fetchContentAndResponse(port, path, from, to);
   });
 }
 
-Future<MockHttpResponse> _withMockRequest(
-    VirtualDirectory virDir, MockHttpRequest request) async {
+Future<FakeHttpResponse> _withFakeRequest(
+    VirtualDirectory virDir, FakeHttpRequest request) async {
   var value = await virDir.serveRequest(request);
 
   expect(value, isNull);
-  expect(request.response.mockDone, isTrue);
+  expect(request.response.fakeDone, isTrue);
 
   var response = request.response;
 
@@ -211,9 +211,9 @@ Future<MockHttpResponse> _withMockRequest(
       response.statusCode == HttpStatus.movedTemporarily) {
     if (request.followRedirects == true) {
       var uri = Uri.parse(response.headers.value(HttpHeaders.locationHeader));
-      var newMock = MockHttpRequest(uri, followRedirects: true);
+      var newMock = FakeHttpRequest(uri, followRedirects: true);
 
-      return _withMockRequest(virDir, newMock);
+      return _withFakeRequest(virDir, newMock);
     }
   }
   return response;
@@ -231,7 +231,7 @@ Future<T> _withServer<T>(
   }
 }
 
-Future<HttpHeaders> _getHeaders(int port, String path, int from, int to) {
+Future<HttpHeaders> _headers(int port, String path, int from, int to) {
   var client = HttpClient();
   return client
       .get('localhost', port, path)
@@ -243,7 +243,7 @@ Future<HttpHeaders> _getHeaders(int port, String path, int from, int to) {
       .whenComplete(() => client.close());
 }
 
-Future<String> _getAsString(int port, String path) {
+Future<String> _fetchAsString(int port, String path) {
   var client = HttpClient();
   return client
       .get('localhost', port, path)
@@ -252,7 +252,7 @@ Future<String> _getAsString(int port, String path) {
       .whenComplete(() => client.close());
 }
 
-Future<List<int>> _getAsBytes(int port, String path, int from, int to) {
+Future<List<int>> _fetchAsBytes(int port, String path, int from, int to) {
   var client = HttpClient();
   return client
       .get('localhost', port, path)
@@ -264,7 +264,7 @@ Future<List<int>> _getAsBytes(int port, String path, int from, int to) {
       .whenComplete(() => client.close());
 }
 
-Future<List> _getContentAndResponse(int port, String path, int from, int to) {
+Future<List> _fetchContentAndResponse(int port, String path, int from, int to) {
   var client = HttpClient();
   return client
       .get('localhost', port, path)
@@ -277,7 +277,7 @@ Future<List> _getContentAndResponse(int port, String path, int from, int to) {
       .whenComplete(() => client.close());
 }
 
-Uri _getUri(int port, String path,
+Uri _localhostUri(int port, String path,
     {bool secure = false, bool rawPath = false}) {
   if (rawPath) {
     return Uri(
