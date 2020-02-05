@@ -87,12 +87,9 @@ import 'http_body_impl.dart';
 ///
 /// ```dart
 /// HttpClient client = ...
-/// client.get(...)
-///     .then((HttpClientRequest response) => response.close())
-///     .then(HttpBodyHandler.processResponse)
-///     .then((HttpClientResponseBody body) {
-///       ...
-///     });
+/// var request = await client.get(...);
+/// var response = await request.close();
+/// var body = HttpBodyHandler.processResponse(response);
 /// ```
 class HttpBodyHandler
     extends StreamTransformerBase<HttpRequest, HttpRequestBody> {

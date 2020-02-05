@@ -73,7 +73,7 @@ class VirtualDirectory {
       requests.listen(serveRequest);
 
   /// Serve a single [HttpRequest], in this [VirtualDirectory].
-  Future serveRequest(HttpRequest request) {
+  Future serveRequest(HttpRequest request) async {
     var iterator = request.uri.pathSegments.iterator;
     for (var segment in _pathPrefixSegments) {
       if (!iterator.moveNext() || iterator.current != segment) {
@@ -81,25 +81,24 @@ class VirtualDirectory {
         return request.response.done;
       }
     }
-    return _locateResource('.', iterator..moveNext()).then((entity) {
-      if (entity is File) {
-        serveFile(entity, request);
-      } else if (entity is Directory) {
-        if (allowDirectoryListing) {
-          _serveDirectory(entity, request);
-        } else {
-          _serveErrorPage(HttpStatus.notFound, request);
-        }
-      } else if (entity is _DirectoryRedirect) {
-        // TODO(ajohnsen): Use HttpRequest.requestedUri once 1.2 is out.
-        request.response.redirect(Uri.parse('${request.uri}/'),
-            status: HttpStatus.movedPermanently);
+    var entity = await _locateResource('.', iterator..moveNext());
+    if (entity is File) {
+      serveFile(entity, request);
+    } else if (entity is Directory) {
+      if (allowDirectoryListing) {
+        _serveDirectory(entity, request);
       } else {
-        assert(entity == null);
         _serveErrorPage(HttpStatus.notFound, request);
       }
-      return request.response.done;
-    });
+    } else if (entity is _DirectoryRedirect) {
+      // TODO(ajohnsen): Use HttpRequest.requestedUri once 1.2 is out.
+      _unawaited(request.response.redirect(Uri.parse('${request.uri}/'),
+          status: HttpStatus.movedPermanently));
+    } else {
+      assert(entity == null);
+      _serveErrorPage(HttpStatus.notFound, request);
+    }
+    return request.response.done;
   }
 
   /// Overrides the default directory listing.
@@ -118,56 +117,54 @@ class VirtualDirectory {
     _errorCallback = callback;
   }
 
-  Future _locateResource(String path, Iterator<String> segments) {
+  Future _locateResource(String path, Iterator<String> segments) async {
     // Don't allow navigating up paths.
     if (segments.current == '..') return Future.value(null);
     path = normalize(path);
     // If we jail to root, the relative path can never go up.
     if (jailRoot && split(path).first == '..') return Future.value(null);
     String fullPath() => join(root, path);
-    return FileSystemEntity.type(fullPath(), followLinks: false).then((type) {
-      switch (type) {
-        case FileSystemEntityType.file:
-          if (segments.current == null) {
-            return File(fullPath());
-          }
-          break;
+    var type = await FileSystemEntity.type(fullPath(), followLinks: false);
+    switch (type) {
+      case FileSystemEntityType.file:
+        if (segments.current == null) {
+          return File(fullPath());
+        }
+        break;
 
-        case FileSystemEntityType.directory:
-          String dirFullPath() => '${fullPath()}$separator';
-          var current = segments.current;
-          if (current == null) {
-            if (path == '.') return Directory(dirFullPath());
-            return const _DirectoryRedirect();
-          }
-          var hasNext = segments.moveNext();
-          if (!hasNext && current == '') {
-            return Directory(dirFullPath());
+      case FileSystemEntityType.directory:
+        String dirFullPath() => '${fullPath()}$separator';
+        var current = segments.current;
+        if (current == null) {
+          if (path == '.') return Directory(dirFullPath());
+          return const _DirectoryRedirect();
+        }
+        var hasNext = segments.moveNext();
+        if (!hasNext && current == '') {
+          return Directory(dirFullPath());
+        } else {
+          if (_invalidPathRegExp.hasMatch(current)) break;
+          return _locateResource(join(path, current), segments);
+        }
+        break;
+
+      case FileSystemEntityType.link:
+        if (followLinks) {
+          var target = await Link(fullPath()).target();
+          var targetPath = normalize(target);
+          if (isAbsolute(targetPath)) {
+            // If we jail to root, the path can never be absolute.
+            if (jailRoot) return null;
+            return _locateResource(targetPath, segments);
           } else {
-            if (_invalidPathRegExp.hasMatch(current)) break;
-            return _locateResource(join(path, current), segments);
+            targetPath = join(dirname(path), targetPath);
+            return _locateResource(targetPath, segments);
           }
-          break;
-
-        case FileSystemEntityType.link:
-          if (followLinks) {
-            return Link(fullPath()).target().then((target) {
-              var targetPath = normalize(target);
-              if (isAbsolute(targetPath)) {
-                // If we jail to root, the path can never be absolute.
-                if (jailRoot) return null;
-                return _locateResource(targetPath, segments);
-              } else {
-                targetPath = join(dirname(path), targetPath);
-                return _locateResource(targetPath, segments);
-              }
-            });
-          }
-          break;
-      }
-      // Return `null` on fall-through, to indicate NOT_FOUND.
-      return null;
-    });
+        }
+        break;
+    }
+    // Return `null` on fall-through, to indicate NOT_FOUND.
+    return null;
   }
 
   /// Serve the content of [file] to [request].
@@ -181,110 +178,112 @@ class VirtualDirectory {
   ///
   /// Note that if it was unable to read from [file], the [request]s response
   /// is closed with error-code [HttpStatus.notFound].
-  void serveFile(File file, HttpRequest request) {
+  void serveFile(File file, HttpRequest request) async {
     var response = request.response;
     // TODO(ajohnsen): Set up Zone support for these errors.
-    file.lastModified().then((lastModified) {
+    try {
+      var lastModified = await file.lastModified();
       if (request.headers.ifModifiedSince != null &&
           !lastModified.isAfter(request.headers.ifModifiedSince)) {
         response.statusCode = HttpStatus.notModified;
-        response.close();
+        await response.close();
         return null;
       }
 
       response.headers.set(HttpHeaders.lastModifiedHeader, lastModified);
       response.headers.set(HttpHeaders.acceptRangesHeader, 'bytes');
 
-      return file.length().then((length) {
-        var range = request.headers.value(HttpHeaders.rangeHeader);
-        if (range != null) {
-          // We only support one range, where the standard support several.
-          var matches = RegExp(r'^bytes=(\d*)\-(\d*)$').firstMatch(range);
-          // If the range header have the right format, handle it.
-          if (matches != null &&
-              (matches[1].isNotEmpty || matches[2].isNotEmpty)) {
-            // Serve sub-range.
-            int start; // First byte position - inclusive.
-            int end; // Last byte position - inclusive.
-            if (matches[1].isEmpty) {
-              start = length - int.parse(matches[2]);
-              if (start < 0) start = 0;
+      var length = await file.length();
+      var range = request.headers.value(HttpHeaders.rangeHeader);
+      if (range != null) {
+        // We only support one range, where the standard support several.
+        var matches = RegExp(r'^bytes=(\d*)\-(\d*)$').firstMatch(range);
+        // If the range header have the right format, handle it.
+        if (matches != null &&
+            (matches[1].isNotEmpty || matches[2].isNotEmpty)) {
+          // Serve sub-range.
+          int start; // First byte position - inclusive.
+          int end; // Last byte position - inclusive.
+          if (matches[1].isEmpty) {
+            start = length - int.parse(matches[2]);
+            if (start < 0) start = 0;
+            end = length - 1;
+          } else {
+            start = int.parse(matches[1]);
+            end = matches[2].isEmpty ? length - 1 : int.parse(matches[2]);
+          }
+          // If the range is syntactically invalid the Range header
+          // MUST be ignored (RFC 2616 section 14.35.1).
+          if (start <= end) {
+            if (end >= length) {
               end = length - 1;
-            } else {
-              start = int.parse(matches[1]);
-              end = matches[2].isEmpty ? length - 1 : int.parse(matches[2]);
             }
-            // If the range is syntactically invalid the Range header
-            // MUST be ignored (RFC 2616 section 14.35.1).
-            if (start <= end) {
-              if (end >= length) {
-                end = length - 1;
-              }
 
-              if (start >= length) {
-                response
-                  ..statusCode = HttpStatus.requestedRangeNotSatisfiable
-                  ..close();
-                return;
-              }
-
-              // Override Content-Length with the actual bytes sent.
-              response.headers
-                  .set(HttpHeaders.contentLengthHeader, end - start + 1);
-
-              // Set 'Partial Content' status code.
-              response
-                ..statusCode = HttpStatus.partialContent
-                ..headers.set(HttpHeaders.contentRangeHeader,
-                    'bytes $start-$end/$length');
-
-              // Pipe the 'range' of the file.
-              if (request.method == 'HEAD') {
-                response.close();
-              } else {
-                file
-                    .openRead(start, end + 1)
-                    .cast<List<int>>()
-                    .pipe(_VirtualDirectoryFileStream(response, file.path))
-                    .catchError((_) {
-                  // TODO(kevmoo): log errors
-                });
-              }
+            if (start >= length) {
+              response.statusCode = HttpStatus.requestedRangeNotSatisfiable;
+              await response.close();
               return;
             }
+
+            // Override Content-Length with the actual bytes sent.
+            response.headers
+                .set(HttpHeaders.contentLengthHeader, end - start + 1);
+
+            // Set 'Partial Content' status code.
+            response
+              ..statusCode = HttpStatus.partialContent
+              ..headers.set(
+                  HttpHeaders.contentRangeHeader, 'bytes $start-$end/$length');
+
+            // Pipe the 'range' of the file.
+            if (request.method == 'HEAD') {
+              await response.close();
+            } else {
+              try {
+                await file
+                    .openRead(start, end + 1)
+                    .cast<List<int>>()
+                    .pipe(_VirtualDirectoryFileStream(response, file.path));
+              } catch (_) {
+                // TODO(kevmoo): log errors
+              }
+            }
+            return;
           }
         }
+      }
 
-        response.headers.set(HttpHeaders.contentLengthHeader, length);
-        if (request.method == 'HEAD') {
-          response.close();
-        } else {
-          file
+      response.headers.set(HttpHeaders.contentLengthHeader, length);
+      if (request.method == 'HEAD') {
+        await response.close();
+      } else {
+        try {
+          await file
               .openRead()
               .cast<List<int>>()
-              .pipe(_VirtualDirectoryFileStream(response, file.path))
-              .catchError((_) {
-            // TODO(kevmoo): log errors
-          });
+              .pipe(_VirtualDirectoryFileStream(response, file.path));
+        } catch (_) {
+          // TODO(kevmoo): log errors
         }
-      });
-    }).catchError((_) {
+      }
+    } catch (_) {
       response.statusCode = HttpStatus.notFound;
-      response.close();
-    });
+      await response.close();
+    }
   }
 
-  void _serveDirectory(Directory dir, HttpRequest request) {
+  void _serveDirectory(Directory dir, HttpRequest request) async {
     if (_dirCallback != null) {
       _dirCallback(dir, request);
       return;
     }
     var response = request.response;
-    dir.stat().then((stats) {
+    try {
+      var stats = await dir.stat();
       if (request.headers.ifModifiedSince != null &&
           !stats.modified.isAfter(request.headers.ifModifiedSince)) {
         response.statusCode = HttpStatus.notModified;
-        response.close();
+        await response.close();
         return;
       }
 
@@ -358,10 +357,10 @@ $server
         response.write(footer);
         response.close();
       });
-    }, onError: (e) {
+    } catch (_) {
       // TODO(kevmoo): log error
-      response.close();
-    });
+      await response.close();
+    }
   }
 
   void _serveErrorPage(int error, HttpRequest request) {
@@ -451,3 +450,6 @@ class _VirtualDirectoryFileStream extends StreamConsumer<List<int>> {
     }
   }
 }
+
+// Copied from `package:pedantic` to avoid the dep.
+void _unawaited(Future<void> f) {}
