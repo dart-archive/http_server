@@ -21,21 +21,23 @@ class HttpBodyHandlerTransformer
   Stream<HttpRequestBody> bind(Stream<HttpRequest> stream) {
     var pending = 0;
     var closed = false;
-    return stream.transform(StreamTransformer.fromHandlers(
-        handleData: (request, sink) async {
-          pending++;
-          try {
-            var body = await HttpBodyHandlerImpl.processRequest(
-                request, _defaultEncoding);
-            sink.add(body);
-          } catch (e, st) {
-            sink.addError(e, st);
-          } finally {
-            pending--;
-            if (closed && pending == 0) sink.close();
-          }
-        },
-        handleDone: (sink) {}));
+    return stream.transform(
+        StreamTransformer.fromHandlers(handleData: (request, sink) async {
+      pending++;
+      try {
+        var body =
+            await HttpBodyHandlerImpl.processRequest(request, _defaultEncoding);
+        sink.add(body);
+      } catch (e, st) {
+        sink.addError(e, st);
+      } finally {
+        pending--;
+        if (closed && pending == 0) sink.close();
+      }
+    }, handleDone: (sink) {
+      closed = true;
+      if (pending == 0) sink.close();
+    }));
   }
 }
 
