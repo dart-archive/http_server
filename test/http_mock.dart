@@ -39,7 +39,10 @@ class MockHttpHeaders implements HttpHeaders {
   ContentType contentType;
 
   @override
-  void set(String name, Object value) {
+  void set(String name, Object value, {bool preserveHeaderCase = false}) {
+    if (preserveHeaderCase) {
+      throw ArgumentError('preserveHeaderCase not supported');
+    }
     name = name.toLowerCase();
     _headers.remove(name);
     _addAll(name, value);
