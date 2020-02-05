@@ -2,40 +2,41 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
-library http_server.virtual_host;
-
 import 'dart:async';
 import 'dart:io';
 
-/// The [VirtualHost] class is a utility class for handling multiple hosts on
-/// multiple sources, by using a named-based approach.
+/// A utility for handling multiple hosts on multiple sources using a
+/// named-based approach.
 abstract class VirtualHost {
-  /// Get the [Stream] of [HttpRequest]s, not matching any hosts. If unused, the
-  /// default implementation will result in a [HttpStatus.forbidden] response.
+  /// The [Stream] of [HttpRequest] not matching any hosts.
+  ///
+  /// If this field is not read the default implementation will result in a
+  /// [HttpStatus.forbidden] response.
   Stream<HttpRequest> get unhandled;
 
-  /// Construct a new [VirtualHost].
+  /// Construct an [VirtualHost] with an optional initial source.
   ///
   /// The optional [source] is a shortcut for calling [addSource].
   ///
-  /// Example of usage:
+  /// ## Example
   ///
-  ///   HttpServer.bind(..., 80).then((server) {
-  ///     var virtualHost = new VirtualHost(server);
-  ///     virtualServer.addHost('static.myserver.com')
-  ///         .listen(...);
-  ///     virtualServer.addHost('cache.myserver.com')
-  ///         .listen(...);
-  ///   })
+  /// ```dart
+  /// var server = await HttpServer.bind(..., 80);
+  /// var virtualHost = VirtualHost(server);
+  /// virtualServer.addHost('static.myserver.com').listen(...);
+  /// virtualServer.addHost('cache.myserver.com').listen(...);
+  /// ```
   factory VirtualHost([Stream<HttpRequest> source]) => _VirtualHost(source);
 
   /// Provide another source of [HttpRequest]s in the form of a [Stream].
   void addSource(Stream<HttpRequest> source);
 
-  /// Add a host to the [VirtualHost] instance. The host can be either a specific
-  /// domain (`my.domain.name`) or a wildcard-based domain name
-  /// (`*.domain.name`). The former will only match the specific domain name
-  /// while the latter will match any series of sub-domains.
+  /// Add a host to the [VirtualHost] instance.
+  ///
+  /// The host can be either a specific domain (`my.domain.name`) or a
+  /// wildcard-based domain name (`*.domain.name`). The former will only match
+  /// the specific domain name while the latter will match any series of
+  /// sub-domains.
   ///
   /// If both `my.domain.name` and `*.domain.name` is specified, the most
   /// qualified will take precedence, `my.domain.name` in this case.
