@@ -9,7 +9,7 @@ import 'package:http_server/http_server.dart';
 import 'package:test/test.dart';
 
 void _testHttpClientResponseBody() {
-  void test(
+  void check(
       String mimeType, List<int> content, dynamic expectedBody, String type,
       [bool shouldFail = false]) async {
     var server = await HttpServer.bind('localhost', 0);
@@ -46,20 +46,20 @@ void _testHttpClientResponseBody() {
     }
   }
 
-  test('text/plain', 'body'.codeUnits, 'body', 'text');
-  test('text/plain; charset=utf-8', 'body'.codeUnits, 'body', 'text');
-  test('text/plain; charset=iso-8859-1', 'body'.codeUnits, 'body', 'text');
-  test('text/plain; charset=us-ascii', 'body'.codeUnits, 'body', 'text');
-  test('text/plain; charset=utf-8', [42], '*', 'text');
-  test('text/plain; charset=us-ascii', [142], null, 'text', true);
-  test('text/plain; charset=utf-8', [142], null, 'text', true);
+  check('text/plain', 'body'.codeUnits, 'body', 'text');
+  check('text/plain; charset=utf-8', 'body'.codeUnits, 'body', 'text');
+  check('text/plain; charset=iso-8859-1', 'body'.codeUnits, 'body', 'text');
+  check('text/plain; charset=us-ascii', 'body'.codeUnits, 'body', 'text');
+  check('text/plain; charset=utf-8', [42], '*', 'text');
+  check('text/plain; charset=us-ascii', [142], null, 'text', true);
+  check('text/plain; charset=utf-8', [142], null, 'text', true);
 
-  test('application/json', '{"val": 5}'.codeUnits, {'val': 5}, 'json');
-  test('application/json', '{ bad json }'.codeUnits, null, 'json', true);
+  check('application/json', '{"val": 5}'.codeUnits, {'val': 5}, 'json');
+  check('application/json', '{ bad json }'.codeUnits, null, 'json', true);
 }
 
 void _testHttpServerRequestBody() {
-  void test(
+  void check(
       String mimeType, List<int> content, dynamic expectedBody, String type,
       {bool shouldFail = false, Encoding defaultEncoding = utf8}) async {
     var server = await HttpServer.bind('localhost', 0);
@@ -135,19 +135,19 @@ void _testHttpServerRequestBody() {
     }
   }
 
-  test('text/plain', 'body'.codeUnits, 'body', 'text');
-  test('text/plain; charset=utf-8', 'body'.codeUnits, 'body', 'text');
-  test('text/plain; charset=utf-8', [42], '*', 'text');
-  test('text/plain; charset=us-ascii', [142], null, 'text', shouldFail: true);
-  test('text/plain; charset=utf-8', [142], null, 'text', shouldFail: true);
+  check('text/plain', 'body'.codeUnits, 'body', 'text');
+  check('text/plain; charset=utf-8', 'body'.codeUnits, 'body', 'text');
+  check('text/plain; charset=utf-8', [42], '*', 'text');
+  check('text/plain; charset=us-ascii', [142], null, 'text', shouldFail: true);
+  check('text/plain; charset=utf-8', [142], null, 'text', shouldFail: true);
 
-  test('application/json', '{"val": 5}'.codeUnits, {'val': 5}, 'json');
-  test('application/json', '{ bad json }'.codeUnits, null, 'json',
+  check('application/json', '{"val": 5}'.codeUnits, {'val': 5}, 'json');
+  check('application/json', '{ bad json }'.codeUnits, null, 'json',
       shouldFail: true);
 
-  test(null, 'body'.codeUnits, 'body'.codeUnits, 'binary');
+  check(null, 'body'.codeUnits, 'body'.codeUnits, 'binary');
 
-  test(
+  check(
       'multipart/form-data; boundary=AaB03x',
       '''
 --AaB03x\r
@@ -159,7 +159,7 @@ Larry\r
       {'name': 'Larry'},
       'form');
 
-  test(
+  check(
       'multipart/form-data; boundary=AaB03x',
       '''
 --AaB03x\r
@@ -178,7 +178,7 @@ File content\r
       },
       'form');
 
-  test(
+  check(
       'multipart/form-data; boundary=AaB03x',
       '''
 --AaB03x\r
@@ -202,7 +202,7 @@ File content\r
       },
       'form');
 
-  test(
+  check(
       'multipart/form-data; boundary=AaB03x',
       '''
 --AaB03x\r
@@ -221,7 +221,7 @@ File content\r
       },
       'form');
 
-  test(
+  check(
       'application/x-www-form-urlencoded',
       '%E5%B9%B3%3D%E4%BB%AE%E5%90%8D=%E5%B9%B3%E4%BB%AE%E5%90%8D&b'
               '=%E5%B9%B3%E4%BB%AE%E5%90%8D'
@@ -229,58 +229,58 @@ File content\r
       {'平=仮名': '平仮名', 'b': '平仮名'},
       'form');
 
-  test('application/x-www-form-urlencoded', 'a=%F8+%26%23548%3B'.codeUnits,
+  check('application/x-www-form-urlencoded', 'a=%F8+%26%23548%3B'.codeUnits,
       null, 'form',
       shouldFail: true);
 
-  test('application/x-www-form-urlencoded', 'a=%C0%A0'.codeUnits, null, 'form',
+  check('application/x-www-form-urlencoded', 'a=%C0%A0'.codeUnits, null, 'form',
       shouldFail: true);
 
-  test('application/x-www-form-urlencoded', 'a=x%A0x'.codeUnits, null, 'form',
+  check('application/x-www-form-urlencoded', 'a=x%A0x'.codeUnits, null, 'form',
       shouldFail: true);
 
-  test('application/x-www-form-urlencoded', 'a=x%C0x'.codeUnits, null, 'form',
+  check('application/x-www-form-urlencoded', 'a=x%C0x'.codeUnits, null, 'form',
       shouldFail: true);
 
-  test('application/x-www-form-urlencoded', 'a=%C3%B8+%C8%A4'.codeUnits,
+  check('application/x-www-form-urlencoded', 'a=%C3%B8+%C8%A4'.codeUnits,
       {'a': 'ø Ȥ'}, 'form');
 
-  test('application/x-www-form-urlencoded', 'a=%F8+%26%23548%3B'.codeUnits,
+  check('application/x-www-form-urlencoded', 'a=%F8+%26%23548%3B'.codeUnits,
       {'a': 'ø &#548;'}, 'form',
       defaultEncoding: latin1);
 
-  test('application/x-www-form-urlencoded', 'name=%26'.codeUnits, {'name': '&'},
-      'form',
+  check('application/x-www-form-urlencoded', 'name=%26'.codeUnits,
+      {'name': '&'}, 'form',
       defaultEncoding: latin1);
 
-  test('application/x-www-form-urlencoded', 'name=%F8%26'.codeUnits,
+  check('application/x-www-form-urlencoded', 'name=%F8%26'.codeUnits,
       {'name': 'ø&'}, 'form',
       defaultEncoding: latin1);
 
-  test('application/x-www-form-urlencoded', 'name=%26%3B'.codeUnits,
+  check('application/x-www-form-urlencoded', 'name=%26%3B'.codeUnits,
       {'name': '&;'}, 'form',
       defaultEncoding: latin1);
 
-  test(
+  check(
       'application/x-www-form-urlencoded',
       'name=%26%23548%3B%26%23548%3B'.codeUnits,
       {'name': '&#548;&#548;'},
       'form',
       defaultEncoding: latin1);
 
-  test('application/x-www-form-urlencoded', 'name=%26'.codeUnits, {'name': '&'},
-      'form');
+  check('application/x-www-form-urlencoded', 'name=%26'.codeUnits,
+      {'name': '&'}, 'form');
 
-  test('application/x-www-form-urlencoded', 'name=%C3%B8%26'.codeUnits,
+  check('application/x-www-form-urlencoded', 'name=%C3%B8%26'.codeUnits,
       {'name': 'ø&'}, 'form');
 
-  test('application/x-www-form-urlencoded', 'name=%26%3B'.codeUnits,
+  check('application/x-www-form-urlencoded', 'name=%26%3B'.codeUnits,
       {'name': '&;'}, 'form');
 
-  test('application/x-www-form-urlencoded', 'name=%C8%A4%26%23548%3B'.codeUnits,
-      {'name': 'Ȥ&#548;'}, 'form');
+  check('application/x-www-form-urlencoded',
+      'name=%C8%A4%26%23548%3B'.codeUnits, {'name': 'Ȥ&#548;'}, 'form');
 
-  test('application/x-www-form-urlencoded', 'name=%C8%A4%C8%A4'.codeUnits,
+  check('application/x-www-form-urlencoded', 'name=%C8%A4%C8%A4'.codeUnits,
       {'name': 'ȤȤ'}, 'form');
 }
 
