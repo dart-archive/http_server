@@ -164,9 +164,11 @@ void main() {
           virDir.allowDirectoryListing = true;
 
           return Future.wait([
-            fetchAsString(virDir, '/').then((s) => s.contains('recursive&#47;')),
+            fetchAsString(virDir, '/')
+                .then((s) => s.contains('recursive&#47;')),
             fetchAsString(virDir, '/').then((s) => !s.contains('../')),
-            fetchAsString(virDir, '/').then((s) => s.contains('Index of &#47;')),
+            fetchAsString(virDir, '/')
+                .then((s) => s.contains('Index of &#47;')),
             fetchAsString(virDir, '/recursive')
                 .then((s) => s.contains('recursive&#47;')),
             fetchAsString(virDir, '/recursive')
@@ -707,8 +709,7 @@ void main() {
       var virDir = VirtualDirectory(dir.path);
       virDir.allowDirectoryListing = true;
 
-      return statusCodeForVirtDir(virDir, '/%00', rawPath: true)
-          .then((result) {
+      return statusCodeForVirtDir(virDir, '/%00', rawPath: true).then((result) {
         expect(result, HttpStatus.notFound);
       });
     });
