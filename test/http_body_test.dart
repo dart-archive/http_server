@@ -11,41 +11,39 @@ import 'package:test/test.dart';
 void _testHttpClientResponseBody() {
   void test(
       String mimeType, List<int> content, dynamic expectedBody, String type,
-      [bool shouldFail = false]) {
-    HttpServer.bind('localhost', 0).then((server) {
-      server.listen((request) {
-        request.listen((_) {}, onDone: () {
-          request.response.headers.contentType = ContentType.parse(mimeType);
-          request.response.add(content);
-          request.response.close();
-        });
-      });
-
-      var client = HttpClient();
-      client
-          .get('localhost', server.port, '/')
-          .then((request) => request.close())
-          .then(HttpBodyHandler.processResponse)
-          .then((body) {
-        expect(shouldFail, isFalse);
-        expect(body.type, equals(type));
-        expect(body.response, isNotNull);
-        switch (type) {
-          case 'text':
-          case 'json':
-            expect(body.body, equals(expectedBody));
-            break;
-
-          default:
-            fail('bad body type');
-        }
-      }, onError: (error) {
-        if (!shouldFail) throw error;
-      }).whenComplete(() async {
-        client.close();
-        await server.close();
+      [bool shouldFail = false]) async {
+    var server = await HttpServer.bind('localhost', 0);
+    server.listen((request) {
+      request.listen((_) {}, onDone: () {
+        request.response.headers.contentType = ContentType.parse(mimeType);
+        request.response.add(content);
+        request.response.close();
       });
     });
+
+    var client = HttpClient();
+    try {
+      var request = await client.get('localhost', server.port, '/');
+      var response = await request.close();
+      var body = await HttpBodyHandler.processResponse(response);
+      expect(shouldFail, isFalse);
+      expect(body.type, equals(type));
+      expect(body.response, isNotNull);
+      switch (type) {
+        case 'text':
+        case 'json':
+          expect(body.body, equals(expectedBody));
+          break;
+
+        default:
+          fail('bad body type');
+      }
+    } catch (_) {
+      if (!shouldFail) rethrow;
+    } finally {
+      client.close();
+      await server.close();
+    }
   }
 
   test('text/plain', 'body'.codeUnits, 'body', 'text');
@@ -63,80 +61,78 @@ void _testHttpClientResponseBody() {
 void _testHttpServerRequestBody() {
   void test(
       String mimeType, List<int> content, dynamic expectedBody, String type,
-      {bool shouldFail = false, Encoding defaultEncoding = utf8}) {
-    HttpServer.bind('localhost', 0).then((server) {
-      server
-          .transform(HttpBodyHandler(defaultEncoding: defaultEncoding))
-          .listen((body) {
-        if (shouldFail) return;
-        expect(shouldFail, isFalse);
-        expect(body.type, equals(type));
-        switch (type) {
-          case 'text':
-            expect(body.request.headers.contentType.mimeType,
-                equals('text/plain'));
-            expect(body.body, equals(expectedBody));
-            break;
+      {bool shouldFail = false, Encoding defaultEncoding = utf8}) async {
+    var server = await HttpServer.bind('localhost', 0);
+    server.transform(HttpBodyHandler(defaultEncoding: defaultEncoding)).listen(
+        (body) {
+      if (shouldFail) return;
+      expect(shouldFail, isFalse);
+      expect(body.type, equals(type));
+      switch (type) {
+        case 'text':
+          expect(
+              body.request.headers.contentType.mimeType, equals('text/plain'));
+          expect(body.body, equals(expectedBody));
+          break;
 
-          case 'json':
-            expect(body.request.headers.contentType.mimeType,
-                equals('application/json'));
-            expect(body.body, equals(expectedBody));
-            break;
+        case 'json':
+          expect(body.request.headers.contentType.mimeType,
+              equals('application/json'));
+          expect(body.body, equals(expectedBody));
+          break;
 
-          case 'binary':
-            expect(body.request.headers.contentType, isNull);
-            expect(body.body, equals(expectedBody));
-            break;
+        case 'binary':
+          expect(body.request.headers.contentType, isNull);
+          expect(body.body, equals(expectedBody));
+          break;
 
-          case 'form':
-            var mimeType = body.request.headers.contentType.mimeType;
-            expect(
-                mimeType,
-                anyOf(equals('multipart/form-data'),
-                    equals('application/x-www-form-urlencoded')));
-            expect(body.body.keys.toSet(), equals(expectedBody.keys.toSet()));
-            for (var key in expectedBody.keys) {
-              var found = body.body[key];
-              var expected = expectedBody[key];
-              if (found is HttpBodyFileUpload) {
-                expect(found.contentType.toString(),
-                    equals(expected['contentType']));
-                expect(found.filename, equals(expected['filename']));
-                expect(found.content, equals(expected['content']));
-              } else {
-                expect(found, equals(expected));
-              }
+        case 'form':
+          var mimeType = body.request.headers.contentType.mimeType;
+          expect(
+              mimeType,
+              anyOf(equals('multipart/form-data'),
+                  equals('application/x-www-form-urlencoded')));
+          expect(body.body.keys.toSet(), equals(expectedBody.keys.toSet()));
+          for (var key in expectedBody.keys) {
+            var found = body.body[key];
+            var expected = expectedBody[key];
+            if (found is HttpBodyFileUpload) {
+              expect(found.contentType.toString(),
+                  equals(expected['contentType']));
+              expect(found.filename, equals(expected['filename']));
+              expect(found.content, equals(expected['content']));
+            } else {
+              expect(found, equals(expected));
             }
-            break;
+          }
+          break;
 
-          default:
-            throw StateError('bad body type');
-        }
-        body.request.response.close();
-      }, onError: (error) {
-        if (!shouldFail) throw error;
-      });
-
-      var client = HttpClient();
-      client.post('localhost', server.port, '/').then((request) {
-        if (mimeType != null) {
-          request.headers.contentType = ContentType.parse(mimeType);
-        }
-        request.add(content);
-        return request.close();
-      }).then((response) {
-        if (shouldFail) {
-          expect(response.statusCode, equals(HttpStatus.badRequest));
-        }
-        return response.drain();
-      }).whenComplete(() async {
-        client.close();
-        await server.close();
-      }).catchError((e) {
-        if (!shouldFail) throw e;
-      });
+        default:
+          throw StateError('bad body type');
+      }
+      body.request.response.close();
+    }, onError: (error) {
+      if (!shouldFail) throw error;
     });
+
+    var client = HttpClient();
+    try {
+      var request = await client.post('localhost', server.port, '/');
+      if (mimeType != null) {
+        request.headers.contentType = ContentType.parse(mimeType);
+      }
+      request.add(content);
+      var response = await request.close();
+      if (shouldFail) {
+        expect(response.statusCode, equals(HttpStatus.badRequest));
+      }
+      return response.drain();
+    } catch (_) {
+      if (!shouldFail) rethrow;
+    } finally {
+      client.close();
+      await server.close();
+    }
   }
 
   test('text/plain', 'body'.codeUnits, 'body', 'text');

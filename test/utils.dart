@@ -54,7 +54,7 @@ Future<int> statusCodeForVirtDir(VirtualDirectory virtualDir, String path,
     bool rawPath = false,
     bool followRedirects = true,
     int from,
-    int to}) {
+    int to}) async {
   // if this is a fake test, then run the fake code path
   if (_isFakeTestExpando[currentTestCase]) {
     var uri = _localhostUri(0, path, secure: secure, rawPath: rawPath);
@@ -63,9 +63,8 @@ Future<int> statusCodeForVirtDir(VirtualDirectory virtualDir, String path,
         followRedirects: followRedirects, ifModifiedSince: ifModifiedSince);
     _addRangeHeader(request, from, to);
 
-    return _withFakeRequest(virtualDir, request).then((response) {
-      return response.statusCode;
-    });
+    var response = await _withFakeRequest(virtualDir, request);
+    return response.statusCode;
   }
 
   assert(_isFakeTestExpando[currentTestCase] == false);
@@ -117,7 +116,7 @@ Future<int> fetchStatusCode(int port, String path,
 }
 
 Future<HttpHeaders> fetchHEaders(VirtualDirectory virDir, String path,
-    {int from, int to}) {
+    {int from, int to}) async {
   // if this is a fake test, then run the fake code path
   if (_isFakeTestExpando[currentTestCase]) {
     var uri = _localhostUri(0, path);
@@ -125,39 +124,33 @@ Future<HttpHeaders> fetchHEaders(VirtualDirectory virDir, String path,
     var request = FakeHttpRequest(uri);
     _addRangeHeader(request, from, to);
 
-    return _withFakeRequest(virDir, request).then((response) {
-      return response.headers;
-    });
+    var response = await _withFakeRequest(virDir, request);
+    return response.headers;
   }
 
   assert(_isFakeTestExpando[currentTestCase] == false);
 
-  return _withServer(virDir, (port) {
-    return _headers(port, path, from, to);
-  });
+  return _withServer(virDir, (port) => _headers(port, path, from, to));
 }
 
-Future<String> fetchAsString(VirtualDirectory virtualDir, String path) {
+Future<String> fetchAsString(VirtualDirectory virtualDir, String path) async {
   // if this is a fake test, then run the fake code path
   if (_isFakeTestExpando[currentTestCase]) {
     var uri = _localhostUri(0, path);
 
     var request = FakeHttpRequest(uri);
 
-    return _withFakeRequest(virtualDir, request).then((response) {
-      return response.fakeContent;
-    });
+    var response = await _withFakeRequest(virtualDir, request);
+    return response.fakeContent;
   }
 
   assert(_isFakeTestExpando[currentTestCase] == false);
 
-  return _withServer(virtualDir, (int port) {
-    return _fetchAsString(port, path);
-  });
+  return _withServer(virtualDir, (int port) => _fetchAsString(port, path));
 }
 
 Future<List<int>> fetchAsBytes(VirtualDirectory virtualDir, String path,
-    {int from, int to}) {
+    {int from, int to}) async {
   // if this is a fake test, then run the fake code path
   if (_isFakeTestExpando[currentTestCase]) {
     var uri = _localhostUri(0, path);
@@ -165,20 +158,18 @@ Future<List<int>> fetchAsBytes(VirtualDirectory virtualDir, String path,
     var request = FakeHttpRequest(uri);
     _addRangeHeader(request, from, to);
 
-    return _withFakeRequest(virtualDir, request).then((response) {
-      return response.fakeContentBinary;
-    });
+    var response = await _withFakeRequest(virtualDir, request);
+    return response.fakeContentBinary;
   }
 
   assert(_isFakeTestExpando[currentTestCase] == false);
 
-  return _withServer(virtualDir, (int port) {
-    return _fetchAsBytes(port, path, from, to);
-  });
+  return _withServer(
+      virtualDir, (int port) => _fetchAsBytes(port, path, from, to));
 }
 
 Future<List> fetchContentAndResponse(VirtualDirectory virtualDir, String path,
-    {int from, int to}) {
+    {int from, int to}) async {
   // if this is a fake test, then run the fake code path
   if (_isFakeTestExpando[currentTestCase]) {
     var uri = _localhostUri(0, path);
@@ -186,16 +177,14 @@ Future<List> fetchContentAndResponse(VirtualDirectory virtualDir, String path,
     var request = FakeHttpRequest(uri);
     _addRangeHeader(request, from, to);
 
-    return _withFakeRequest(virtualDir, request).then((response) {
-      return [response.fakeContentBinary, response];
-    });
+    var response = await _withFakeRequest(virtualDir, request);
+    return [response.fakeContentBinary, response];
   }
 
   assert(_isFakeTestExpando[currentTestCase] == false);
 
-  return _withServer(virtualDir, (int port) {
-    return _fetchContentAndResponse(port, path, from, to);
-  });
+  return _withServer(
+      virtualDir, (int port) => _fetchContentAndResponse(port, path, from, to));
 }
 
 Future<FakeHttpResponse> _withFakeRequest(
@@ -231,50 +220,54 @@ Future<T> _withServer<T>(
   }
 }
 
-Future<HttpHeaders> _headers(int port, String path, int from, int to) {
+Future<HttpHeaders> _headers(int port, String path, int from, int to) async {
   var client = HttpClient();
-  return client
-      .get('localhost', port, path)
-      .then((request) {
-        _addRangeHeader(request, from, to);
-        return request.close();
-      })
-      .then((response) => response.drain().then((_) => response.headers))
-      .whenComplete(() => client.close());
+  try {
+    var request = await client.get('localhost', port, path);
+    _addRangeHeader(request, from, to);
+    var response = await request.close();
+    await response.drain();
+    return response.headers;
+  } finally {
+    client.close();
+  }
 }
 
-Future<String> _fetchAsString(int port, String path) {
+Future<String> _fetchAsString(int port, String path) async {
   var client = HttpClient();
-  return client
-      .get('localhost', port, path)
-      .then((request) => request.close())
-      .then((response) => utf8.decodeStream(response.cast<List<int>>()))
-      .whenComplete(() => client.close());
+  try {
+    var request = await client.get('localhost', port, path);
+    var response = await request.close();
+    return await utf8.decodeStream(response.cast<List<int>>());
+  } finally {
+    client.close();
+  }
 }
 
-Future<List<int>> _fetchAsBytes(int port, String path, int from, int to) {
+Future<List<int>> _fetchAsBytes(int port, String path, int from, int to) async {
   var client = HttpClient();
-  return client
-      .get('localhost', port, path)
-      .then((request) {
-        _addRangeHeader(request, from, to);
-        return request.close();
-      })
-      .then((response) => response.fold<List<int>>([], (p, e) => p..addAll(e)))
-      .whenComplete(() => client.close());
+  try {
+    var request = await client.get('localhost', port, path);
+    _addRangeHeader(request, from, to);
+    var response = await request.close();
+    return await response.fold([], (p, e) => p..addAll(e));
+  } finally {
+    client.close();
+  }
 }
 
-Future<List> _fetchContentAndResponse(int port, String path, int from, int to) {
+Future<List> _fetchContentAndResponse(
+    int port, String path, int from, int to) async {
   var client = HttpClient();
-  return client
-      .get('localhost', port, path)
-      .then((request) {
-        _addRangeHeader(request, from, to);
-        return request.close();
-      })
-      .then((response) => response
-          .fold([], (p, e) => p..addAll(e)).then((bytes) => [bytes, response]))
-      .whenComplete(() => client.close());
+  try {
+    var request = await client.get('localhost', port, path);
+    _addRangeHeader(request, from, to);
+    var response = await request.close();
+    var bytes = await response.fold([], (p, e) => p..addAll(e));
+    return [bytes, response];
+  } finally {
+    client.close();
+  }
 }
 
 Uri _localhostUri(int port, String path,
