@@ -17,7 +17,7 @@ void _testEncoding(name, expected, [bool create = true]) {
     var virDir = VirtualDirectory(dir.path);
     virDir.allowDirectoryListing = true;
 
-    var result = await getStatusCodeForVirtDir(virDir, '/$name');
+    var result = await statusCodeForVirtDir(virDir, '/$name');
     expect(result, expected);
   });
 }
@@ -27,7 +27,7 @@ void main() {
     testVirtualDir('dir-exists', (dir) {
       var virDir = VirtualDirectory(dir.path);
 
-      return getStatusCodeForVirtDir(virDir, '/').then((result) {
+      return statusCodeForVirtDir(virDir, '/').then((result) {
         expect(result, HttpStatus.notFound);
       });
     });
@@ -35,7 +35,7 @@ void main() {
     testVirtualDir('dir-not-exists', (dir) {
       var virDir = VirtualDirectory(pathos.join('${dir.path}foo'));
 
-      return getStatusCodeForVirtDir(virDir, '/').then((result) {
+      return statusCodeForVirtDir(virDir, '/').then((result) {
         expect(result, HttpStatus.notFound);
       });
     });
@@ -46,7 +46,7 @@ void main() {
       testVirtualDir('file-exists', (dir) {
         File('${dir.path}/file')..createSync();
         var virDir = VirtualDirectory(dir.path);
-        return getStatusCodeForVirtDir(virDir, '/file').then((result) {
+        return statusCodeForVirtDir(virDir, '/file').then((result) {
           expect(result, HttpStatus.ok);
         });
       });
@@ -54,7 +54,7 @@ void main() {
       testVirtualDir('file-not-exists', (dir) {
         var virDir = VirtualDirectory(dir.path);
 
-        return getStatusCodeForVirtDir(virDir, '/file').then((result) {
+        return statusCodeForVirtDir(virDir, '/file').then((result) {
           expect(result, HttpStatus.notFound);
         });
       });
@@ -65,7 +65,7 @@ void main() {
         var dir2 = Directory('${dir.path}/dir')..createSync();
         File('${dir2.path}/file')..createSync();
         var virDir = VirtualDirectory(dir.path);
-        return getStatusCodeForVirtDir(virDir, '/dir/file').then((result) {
+        return statusCodeForVirtDir(virDir, '/dir/file').then((result) {
           expect(result, HttpStatus.ok);
         });
       });
@@ -75,7 +75,7 @@ void main() {
         File('${dir.path}/file')..createSync();
         var virDir = VirtualDirectory(dir.path);
 
-        return getStatusCodeForVirtDir(virDir, '/dir/file').then((result) {
+        return statusCodeForVirtDir(virDir, '/dir/file').then((result) {
           expect(result, HttpStatus.notFound);
         });
       });
@@ -88,7 +88,7 @@ void main() {
         var virDir = VirtualDirectory(dir.path);
         virDir.allowDirectoryListing = true;
 
-        return getAsString(virDir, '/').then((result) {
+        return fetchAsString(virDir, '/').then((result) {
           expect(result, contains('Index of &#47'));
         });
       });
@@ -100,7 +100,7 @@ void main() {
         }
         virDir.allowDirectoryListing = true;
 
-        return getAsString(virDir, '/').then((result) {
+        return fetchAsString(virDir, '/').then((result) {
           expect(result, contains('Index of &#47'));
         });
       });
@@ -110,7 +110,7 @@ void main() {
         Directory('${dir.path}/dir').createSync();
         virDir.allowDirectoryListing = true;
 
-        return getAsString(virDir, '/').then((result) {
+        return fetchAsString(virDir, '/').then((result) {
           expect(result, contains('<a href="dir/">'));
         });
       });
@@ -122,7 +122,7 @@ void main() {
         }
         virDir.allowDirectoryListing = true;
 
-        return getAsString(virDir, '/').then((result) {
+        return fetchAsString(virDir, '/').then((result) {
           expect(result, contains('Index of &#47'));
         });
       });
@@ -132,7 +132,7 @@ void main() {
         Directory('${dir.path}/alert(\'hacked!\');').createSync();
         virDir.allowDirectoryListing = true;
 
-        return getAsString(virDir, '/alert(\'hacked!\');').then((result) {
+        return fetchAsString(virDir, '/alert(\'hacked!\');').then((result) {
           expect(result, contains('&#47;alert(&#39;hacked!&#39;);&#47;'));
         });
       });
@@ -142,7 +142,7 @@ void main() {
         Directory('${dir.path}/æø').createSync();
         virDir.allowDirectoryListing = true;
 
-        return getAsString(virDir, '/').then((result) {
+        return fetchAsString(virDir, '/').then((result) {
           expect(result, contains('æø'));
         });
       });
@@ -151,7 +151,7 @@ void main() {
         var virDir = VirtualDirectory(dir.path);
         virDir.allowDirectoryListing = true;
 
-        return getHeaders(virDir, '/').then((headers) {
+        return fetchHEaders(virDir, '/').then((headers) {
           var contentType = headers.contentType.toString();
           expect(contentType, 'text/html; charset=utf-8');
         });
@@ -164,14 +164,16 @@ void main() {
           virDir.allowDirectoryListing = true;
 
           return Future.wait([
-            getAsString(virDir, '/').then((s) => s.contains('recursive&#47;')),
-            getAsString(virDir, '/').then((s) => !s.contains('../')),
-            getAsString(virDir, '/').then((s) => s.contains('Index of &#47;')),
-            getAsString(virDir, '/recursive')
+            fetchAsString(virDir, '/')
                 .then((s) => s.contains('recursive&#47;')),
-            getAsString(virDir, '/recursive')
+            fetchAsString(virDir, '/').then((s) => !s.contains('../')),
+            fetchAsString(virDir, '/')
+                .then((s) => s.contains('Index of &#47;')),
+            fetchAsString(virDir, '/recursive')
+                .then((s) => s.contains('recursive&#47;')),
+            fetchAsString(virDir, '/recursive')
                 .then((s) => s.contains('..&#47;')),
-            getAsString(virDir, '/recursive')
+            fetchAsString(virDir, '/recursive')
                 .then((s) => s.contains('Index of &#47;recursive'))
           ]).then((result) {
             expect(result, equals([true, true, true, true, true, true]));
@@ -183,7 +185,7 @@ void main() {
           Directory('${dir.path}/javascript:alert(document);"').createSync();
           virDir.allowDirectoryListing = true;
 
-          return getAsString(virDir, '/').then((result) {
+          return fetchAsString(virDir, '/').then((result) {
             expect(result, contains('javascript%3Aalert(document)%3B%22/'));
           });
         });
@@ -193,7 +195,7 @@ void main() {
           Directory('${dir.path}/<>&"').createSync();
           virDir.allowDirectoryListing = true;
 
-          return getAsString(virDir, '/').then((result) {
+          return fetchAsString(virDir, '/').then((result) {
             expect(result, contains('&lt;&gt;&amp;&quot;&#47;'));
             expect(result, contains('href="%3C%3E%26%22/"'));
           });
@@ -212,7 +214,7 @@ void main() {
           request.response.close();
         };
 
-        return getAsString(virDir, '/').then((result) {
+        return fetchAsString(virDir, '/').then((result) {
           expect(result, 'My handler /');
         });
       });
@@ -227,7 +229,7 @@ void main() {
           return virDir.serveFile(File(indexUri.toFilePath()), request);
         };
 
-        return getAsString(virDir, '/').then((result) {
+        return fetchAsString(virDir, '/').then((result) {
           expect(result, 'index file');
         });
       });
@@ -241,7 +243,7 @@ void main() {
           fail('not expected');
         };
 
-        return getStatusCodeForVirtDir(virDir, '/dir', followRedirects: false)
+        return statusCodeForVirtDir(virDir, '/dir', followRedirects: false)
             .then((result) {
           expect(result, 301);
         });
@@ -258,7 +260,7 @@ void main() {
           var indexUri = Uri.file(dir2.path).resolve('index.html');
           return virDir.serveFile(File(indexUri.toFilePath()), request);
         };
-        return getAsString(virDir, '/dir').then((result) {
+        return fetchAsString(virDir, '/dir').then((result) {
           expect(result, 'index file');
         });
       });
@@ -274,7 +276,7 @@ void main() {
           var indexUri = Uri.file(dir2.path).resolve('index.html');
           virDir.serveFile(File(indexUri.toFilePath()), request);
         };
-        return getAsString(virDir, '/dir/').then((result) {
+        return fetchAsString(virDir, '/dir/').then((result) {
           expect(result, 'index file');
         });
       });
@@ -289,7 +291,7 @@ void main() {
           request.response.close();
         };
 
-        return getStatusCodeForVirtDir(virDir, '/path').then((result) {
+        return statusCodeForVirtDir(virDir, '/path').then((result) {
           expect(result, HttpStatus.ok);
         });
       });
@@ -302,14 +304,14 @@ void main() {
           request.response.close();
         };
 
-        return getStatusCodeForVirtDir(virDir, '/path').then((result) {
+        return statusCodeForVirtDir(virDir, '/path').then((result) {
           expect(result, HttpStatus.ok);
         });
       });
 
       testVirtualDir('not-matching', (dir) {
         var virDir = VirtualDirectory(dir.path, pathPrefix: '/path/');
-        return getStatusCodeForVirtDir(virDir, '/').then((result) {
+        return statusCodeForVirtDir(virDir, '/').then((result) {
           expect(result, HttpStatus.notFound);
         });
       });
@@ -326,7 +328,7 @@ void main() {
           var virDir = VirtualDirectory(dir.path);
           virDir.followLinks = true;
 
-          return getStatusCodeForVirtDir(virDir, '/dir3/file').then((result) {
+          return statusCodeForVirtDir(virDir, '/dir3/file').then((result) {
             expect(result, HttpStatus.ok);
           });
         });
@@ -337,7 +339,7 @@ void main() {
           var virDir = VirtualDirectory(dir.path);
           virDir.followLinks = true;
 
-          return getStatusCodeForVirtDir(virDir, '/dir3/file').then((result) {
+          return statusCodeForVirtDir(virDir, '/dir3/file').then((result) {
             expect(result, HttpStatus.ok);
           });
         });
@@ -349,7 +351,7 @@ void main() {
             var virDir = VirtualDirectory(dir.path);
             virDir.followLinks = true;
 
-            return getStatusCodeForVirtDir(virDir, '/file2').then((result) {
+            return statusCodeForVirtDir(virDir, '/file2').then((result) {
               expect(result, HttpStatus.notFound);
             });
           });
@@ -361,7 +363,7 @@ void main() {
             var virDir = VirtualDirectory(dir2.path);
             virDir.followLinks = true;
 
-            return getStatusCodeForVirtDir(virDir, '/dir3/file').then((result) {
+            return statusCodeForVirtDir(virDir, '/dir3/file').then((result) {
               expect(result, HttpStatus.notFound);
             });
           });
@@ -376,7 +378,7 @@ void main() {
           var virDir = VirtualDirectory(dir.path);
           virDir.followLinks = false;
 
-          return getStatusCodeForVirtDir(virDir, '/dir3/file').then((result) {
+          return statusCodeForVirtDir(virDir, '/dir3/file').then((result) {
             expect(result, HttpStatus.notFound);
           });
         });
@@ -391,7 +393,7 @@ void main() {
             virDir.followLinks = true;
             virDir.jailRoot = false;
 
-            return getStatusCodeForVirtDir(virDir, '/file2').then((result) {
+            return statusCodeForVirtDir(virDir, '/file2').then((result) {
               expect(result, HttpStatus.ok);
             });
           });
@@ -404,7 +406,7 @@ void main() {
             virDir.followLinks = true;
             virDir.jailRoot = false;
 
-            return getStatusCodeForVirtDir(virDir, '/file').then((result) {
+            return statusCodeForVirtDir(virDir, '/file').then((result) {
               expect(result, HttpStatus.ok);
             });
           });
@@ -419,12 +421,12 @@ void main() {
         File('${dir.path}/file')..createSync();
         var virDir = VirtualDirectory(dir.path);
 
-        return getHeaders(virDir, '/file').then((headers) {
+        return fetchHEaders(virDir, '/file').then((headers) {
           expect(headers.value(HttpHeaders.lastModifiedHeader), isNotNull);
           var lastModified =
               HttpDate.parse(headers.value(HttpHeaders.lastModifiedHeader));
 
-          return getStatusCodeForVirtDir(virDir, '/file',
+          return statusCodeForVirtDir(virDir, '/file',
               ifModifiedSince: lastModified);
         }).then((result) {
           expect(result, HttpStatus.notModified);
@@ -435,7 +437,7 @@ void main() {
         File('${dir.path}/file')..createSync();
         var virDir = VirtualDirectory(dir.path);
 
-        return getHeaders(virDir, '/file').then((headers) {
+        return fetchHEaders(virDir, '/file').then((headers) {
           expect(headers.value(HttpHeaders.lastModifiedHeader), isNotNull);
           var lastModified =
               HttpDate.parse(headers.value(HttpHeaders.lastModifiedHeader));
@@ -443,7 +445,7 @@ void main() {
           // Fake file changed by moving date back in time.
           lastModified = lastModified.subtract(const Duration(seconds: 10));
 
-          return getStatusCodeForVirtDir(virDir, '/file',
+          return statusCodeForVirtDir(virDir, '/file',
               ifModifiedSince: lastModified);
         }).then((result) {
           expect(result, HttpStatus.ok);
@@ -458,7 +460,7 @@ void main() {
         File('${dir.path}/file.jpg')..createSync();
         var virDir = VirtualDirectory(dir.path);
 
-        return getHeaders(virDir, '/file.jpg').then((headers) {
+        return fetchHEaders(virDir, '/file.jpg').then((headers) {
           var contentType = headers.contentType.toString();
           expect(contentType, 'image/jpeg');
         });
@@ -469,7 +471,7 @@ void main() {
         file.writeAsBytesSync([0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A]);
         var virDir = VirtualDirectory(dir.path);
 
-        return getHeaders(virDir, '/file.jpg').then((headers) {
+        return fetchHEaders(virDir, '/file.jpg').then((headers) {
           var contentType = headers.contentType.toString();
           expect(contentType, 'image/png');
         });
@@ -491,7 +493,7 @@ void main() {
       Future test(int from, int to, [List<int> expected, String contentRange]) {
         expected ??= fileContent.sublist(from, to + 1);
         contentRange ??= 'bytes $from-$to/${fileContent.length}';
-        return getContentAndResponse(virDir, '/file', from: from, to: to)
+        return fetchContentAndResponse(virDir, '/file', from: from, to: to)
             .then(expectAsync1((result) {
           var content = result[0];
           var response = result[1];
@@ -530,7 +532,7 @@ void main() {
               '${fileContent.length - 1}/'
               '${fileContent.length}';
         }
-        return getContentAndResponse(virDir, '/file', from: from)
+        return fetchContentAndResponse(virDir, '/file', from: from)
             .then(expectAsync1((result) {
           var content = result[0];
           var response = result[1];
@@ -563,7 +565,7 @@ void main() {
         contentRange ??= 'bytes ${fileContent.length - to}-'
             '${fileContent.length - 1}/'
             '${fileContent.length}';
-        return getContentAndResponse(virDir, '/file', to: to)
+        return fetchContentAndResponse(virDir, '/file', to: to)
             .then(expectAsync1((result) {
           var content = result[0];
           var response = result[1];
@@ -587,7 +589,7 @@ void main() {
     testVirtualDir('unsatisfiable-range', (dir) {
       prepare(dir);
       Future test(int from, int to) {
-        return getContentAndResponse(virDir, '/file', from: from, to: to)
+        return fetchContentAndResponse(virDir, '/file', from: from, to: to)
             .then(expectAsync1((result) {
           var content = result[0];
           var response = result[1];
@@ -605,7 +607,7 @@ void main() {
     testVirtualDir('invalid-range', (dir) {
       prepare(dir);
       Future test(int from, int to) {
-        return getContentAndResponse(virDir, '/file', from: from, to: to)
+        return fetchContentAndResponse(virDir, '/file', from: from, to: to)
             .then(expectAsync1((result) {
           var content = result[0];
           var response = result[1];
@@ -628,7 +630,7 @@ void main() {
     testVirtualDir('default', (dir) {
       var virDir = VirtualDirectory(pathos.join(dir.path, 'foo'));
 
-      return getAsString(virDir, '/').then((result) {
+      return fetchAsString(virDir, '/').then((result) {
         expect(result, matches(RegExp('404.*Not Found')));
       });
     });
@@ -642,7 +644,7 @@ void main() {
         request.response.close();
       };
 
-      return getAsString(virDir, '/').then((result) {
+      return fetchAsString(virDir, '/').then((result) {
         expect(result, 'my-page 404');
       });
     });
@@ -653,7 +655,7 @@ void main() {
       var virDir = VirtualDirectory(dir.path);
       virDir.allowDirectoryListing = true;
 
-      return getStatusCodeForVirtDir(virDir, '/../').then((result) {
+      return statusCodeForVirtDir(virDir, '/../').then((result) {
         expect(result, HttpStatus.notFound);
       });
     });
@@ -663,7 +665,7 @@ void main() {
       var virDir = VirtualDirectory(dir.path);
       virDir.allowDirectoryListing = true;
 
-      return getStatusCodeForVirtDir(virDir, '/dir/../../').then((result) {
+      return statusCodeForVirtDir(virDir, '/dir/../../').then((result) {
         expect(result, HttpStatus.notFound);
       });
     });
@@ -676,7 +678,7 @@ void main() {
       File('${dir.path}/my file')..createSync();
       var virDir = VirtualDirectory(dir.path);
 
-      return getStatusCodeForVirtDir(virDir, '/my file').then((result) {
+      return statusCodeForVirtDir(virDir, '/my file').then((result) {
         expect(result, HttpStatus.ok);
       });
     });
@@ -685,7 +687,7 @@ void main() {
       File('${dir.path}/my file')..createSync();
       var virDir = VirtualDirectory(dir.path);
 
-      return getStatusCodeForVirtDir(virDir, '/my%20file').then((result) {
+      return statusCodeForVirtDir(virDir, '/my%20file').then((result) {
         expect(result, HttpStatus.notFound);
       });
     });
@@ -697,7 +699,7 @@ void main() {
       var virDir = VirtualDirectory(dir.path);
       virDir.allowDirectoryListing = true;
 
-      return getStatusCodeForVirtDir(virDir, '/a%2fb/c', rawPath: true)
+      return statusCodeForVirtDir(virDir, '/a%2fb/c', rawPath: true)
           .then((result) {
         expect(result, HttpStatus.notFound);
       });
@@ -707,8 +709,7 @@ void main() {
       var virDir = VirtualDirectory(dir.path);
       virDir.allowDirectoryListing = true;
 
-      return getStatusCodeForVirtDir(virDir, '/%00', rawPath: true)
-          .then((result) {
+      return statusCodeForVirtDir(virDir, '/%00', rawPath: true).then((result) {
         expect(result, HttpStatus.notFound);
       });
     });
@@ -736,9 +737,9 @@ void main() {
         return virDir.serveFile(File('${d.path}/file'), request);
       };
 
-      return getAsString(virDir, '/').then((result) {
+      return fetchAsString(virDir, '/').then((result) {
         expect(result, 'file contents');
-        return getHeaders(virDir, '/').then(expectAsync1((headers) {
+        return fetchHEaders(virDir, '/').then(expectAsync1((headers) {
           expect('file contents'.length, headers.contentLength);
         }));
       });

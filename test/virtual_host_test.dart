@@ -17,7 +17,7 @@ void main() {
     expect(
         HttpServer.bind('localhost', 0).then((server) {
           VirtualHost(server);
-          return getStatusCode(server.port, '/').whenComplete(server.close);
+          return fetchStatusCode(server.port, '/').whenComplete(server.close);
         }),
         completion(equals(HttpStatus.forbidden)));
   });
@@ -29,7 +29,7 @@ void main() {
           expect(virHost.unhandled.first.then((request) {
             request.response.close();
           }), completion(isNull));
-          return getStatusCode(server.port, '/').whenComplete(server.close);
+          return fetchStatusCode(server.port, '/').whenComplete(server.close);
         }),
         completion(equals(HttpStatus.ok)));
   });
@@ -43,7 +43,7 @@ void main() {
                 request.response.close();
               }),
               completion(isNull));
-          return getStatusCode(server.port, '/', host: 'my.host.com')
+          return fetchStatusCode(server.port, '/', host: 'my.host.com')
               .whenComplete(server.close);
         }),
         completion(equals(HttpStatus.ok)));
@@ -69,9 +69,9 @@ void main() {
               }),
               completion(isNull));
           return Future.wait([
-            getStatusCode(server.port, '/', host: 'my.host1.com'),
-            getStatusCode(server.port, '/', host: 'my.host2.com'),
-            getStatusCode(server.port, '/', host: 'my.host3.com')
+            fetchStatusCode(server.port, '/', host: 'my.host1.com'),
+            fetchStatusCode(server.port, '/', host: 'my.host2.com'),
+            fetchStatusCode(server.port, '/', host: 'my.host3.com')
           ]).whenComplete(server.close);
         }),
         completion(equals([HttpStatus.ok, HttpStatus.ok, HttpStatus.ok])));
@@ -90,8 +90,8 @@ void main() {
             request.response.close();
           });
           return Future.wait([
-            getStatusCode(servers[0].port, '/', host: 'myhost1.com'),
-            getStatusCode(servers[1].port, '/',
+            fetchStatusCode(servers[0].port, '/', host: 'myhost1.com'),
+            fetchStatusCode(servers[1].port, '/',
                 host: 'myhost2.com', secure: true)
           ]).whenComplete(() => servers.forEach((s) => s.close()));
         }),
@@ -119,9 +119,9 @@ void main() {
                 }),
                 completion(isNull));
             return Future.wait([
-              getStatusCode(server.port, '/', host: 'my1.host.com'),
-              getStatusCode(server.port, '/', host: 'my2.host.com'),
-              getStatusCode(server.port, '/', host: 'my3.host.com')
+              fetchStatusCode(server.port, '/', host: 'my1.host.com'),
+              fetchStatusCode(server.port, '/', host: 'my2.host.com'),
+              fetchStatusCode(server.port, '/', host: 'my3.host.com')
             ]).whenComplete(server.close);
           }),
           completion(equals([HttpStatus.ok, HttpStatus.ok, HttpStatus.ok])));
@@ -147,9 +147,9 @@ void main() {
                 }),
                 completion(isNull));
             return Future.wait([
-              getStatusCode(server.port, '/', host: 'my.host1.com'),
-              getStatusCode(server.port, '/', host: 'my.host2.com'),
-              getStatusCode(server.port, '/', host: 'my.host3.com')
+              fetchStatusCode(server.port, '/', host: 'my.host1.com'),
+              fetchStatusCode(server.port, '/', host: 'my.host2.com'),
+              fetchStatusCode(server.port, '/', host: 'my.host3.com')
             ]).whenComplete(server.close);
           }),
           completion(equals([HttpStatus.ok, HttpStatus.ok, HttpStatus.ok])));
@@ -175,9 +175,9 @@ void main() {
                 }),
                 completion(isNull));
             return Future.wait([
-              getStatusCode(server.port, '/', host: 'my1.host.com'),
-              getStatusCode(server.port, '/', host: 'my2.host.com'),
-              getStatusCode(server.port, '/', host: 'my3.host.com')
+              fetchStatusCode(server.port, '/', host: 'my1.host.com'),
+              fetchStatusCode(server.port, '/', host: 'my2.host.com'),
+              fetchStatusCode(server.port, '/', host: 'my3.host.com')
             ]).whenComplete(server.close);
           }),
           completion(equals([HttpStatus.ok, HttpStatus.ok, HttpStatus.ok])));
@@ -203,9 +203,9 @@ void main() {
                 }),
                 completion(isNull));
             return Future.wait([
-              getStatusCode(server.port, '/', host: 'some.host.dk'),
-              getStatusCode(server.port, '/', host: 'my.host2.com'),
-              getStatusCode(server.port, '/', host: 'long.sub.of.host.com')
+              fetchStatusCode(server.port, '/', host: 'some.host.dk'),
+              fetchStatusCode(server.port, '/', host: 'my.host2.com'),
+              fetchStatusCode(server.port, '/', host: 'long.sub.of.host.com')
             ]).whenComplete(server.close);
           }),
           completion(equals([HttpStatus.ok, HttpStatus.ok, HttpStatus.ok])));

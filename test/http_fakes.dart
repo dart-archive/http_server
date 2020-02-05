@@ -3,7 +3,7 @@ import 'dart:collection';
 import 'dart:convert';
 import 'dart:io';
 
-class MockHttpHeaders implements HttpHeaders {
+class FakeHttpHeaders implements HttpHeaders {
   final Map<String, List<String>> _headers = HashMap<String, List<String>>();
 
   @override
@@ -121,18 +121,18 @@ class MockHttpHeaders implements HttpHeaders {
   }
 }
 
-class MockHttpRequest implements HttpRequest {
+class FakeHttpRequest implements HttpRequest {
   @override
   final Uri uri;
   @override
-  final MockHttpResponse response = MockHttpResponse();
+  final FakeHttpResponse response = FakeHttpResponse();
   @override
-  final HttpHeaders headers = MockHttpHeaders();
+  final HttpHeaders headers = FakeHttpHeaders();
   @override
   final String method = 'GET';
   final bool followRedirects;
 
-  MockHttpRequest(this.uri,
+  FakeHttpRequest(this.uri,
       {this.followRedirects = true, DateTime ifModifiedSince}) {
     if (ifModifiedSince != null) {
       headers.ifModifiedSince = ifModifiedSince;
@@ -146,15 +146,15 @@ class MockHttpRequest implements HttpRequest {
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 
-class MockHttpResponse implements HttpResponse {
+class FakeHttpResponse implements HttpResponse {
   @override
-  final HttpHeaders headers = MockHttpHeaders();
+  final HttpHeaders headers = FakeHttpHeaders();
   final Completer _completer = Completer();
   final List<int> _buffer = <int>[];
   String _reasonPhrase;
   Future _doneFuture;
 
-  MockHttpResponse() {
+  FakeHttpResponse() {
     _doneFuture = _completer.future.whenComplete(() {
       assert(!_isDone);
       _isDone = true;
@@ -212,11 +212,11 @@ class MockHttpResponse implements HttpResponse {
   @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 
-  String get mockContent => utf8.decode(_buffer);
+  String get fakeContent => utf8.decode(_buffer);
 
-  List<int> get mockContentBinary => _buffer;
+  List<int> get fakeContentBinary => _buffer;
 
-  bool get mockDone => _isDone;
+  bool get fakeDone => _isDone;
 
   // Copied from SDK http_impl.dart @ 845 on 2014-01-05
   // TODO: file an SDK bug to expose this on HttpStatus in some way
