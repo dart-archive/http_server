@@ -294,8 +294,8 @@ void main() {
 
   test('Does not close stream while requests are pending', () async {
     var data = StreamController<Uint8List>();
-    var requests =
-        Stream<HttpRequest>.value(FakeHttpRequest(Uri(), data: data.stream));
+    var requests = Stream<HttpRequest>.fromIterable(
+        [FakeHttpRequest(Uri(), data: data.stream)]);
     var isDone = false;
     requests
         .transform(HttpBodyHandler())
