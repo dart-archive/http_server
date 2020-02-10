@@ -25,12 +25,10 @@ class HttpMultipartFormDataImpl extends Stream
 
   Stream _stream;
 
-  // These `content-transfer-encoding` values indicate that we can handle request data "as-is".
-  static const List<String> _transparentTransferEncodings = [
-    '7bit',
-    '8bit',
-    'binary'
-  ];
+  /// The values which indicate that no incoding was performed.
+  ///
+  /// https://www.w3.org/Protocols/rfc1341/5_Content-Transfer-Encoding.html
+  static const _transparentEncodings = ['7bit', '8bit', 'binary'];
 
   HttpMultipartFormDataImpl(
       this.contentType,
@@ -40,7 +38,7 @@ class HttpMultipartFormDataImpl extends Stream
       Encoding defaultEncoding) {
     _stream = _mimeMultipart;
     if (contentTransferEncoding != null &&
-        !_transparentTransferEncodings
+        !_transparentEncodings
             .contains(contentTransferEncoding.value.toLowerCase())) {
       // TODO(ajohnsen): Support BASE64, etc.
       throw HttpException('Unsupported contentTransferEncoding: '

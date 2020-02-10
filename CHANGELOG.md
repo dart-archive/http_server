@@ -1,5 +1,8 @@
 # 0.9.8+4-dev
 
+* Allow multipart form data with specified encodings that don't require
+  decoding.
+
 # 0.9.8+3
 
 * Prepare for `HttpClientResponse` SDK change (implements `Stream<Uint8List>`
