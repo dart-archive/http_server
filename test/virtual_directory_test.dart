@@ -5,9 +5,9 @@
 import 'dart:async';
 import 'dart:io';
 
-import "package:http_server/http_server.dart";
+import 'package:http_server/http_server.dart';
 import 'package:path/path.dart' as pathos;
-import "package:test/test.dart";
+import 'package:test/test.dart';
 
 import 'utils.dart';
 
@@ -17,192 +17,178 @@ void _testEncoding(name, expected, [bool create = true]) {
     var virDir = VirtualDirectory(dir.path);
     virDir.allowDirectoryListing = true;
 
-    var result = await getStatusCodeForVirtDir(virDir, '/$name');
+    var result = await statusCodeForVirtDir(virDir, '/$name');
     expect(result, expected);
   });
 }
 
 void main() {
   group('serve-root', () {
-    testVirtualDir('dir-exists', (dir) {
+    testVirtualDir('dir-exists', (dir) async {
       var virDir = VirtualDirectory(dir.path);
 
-      return getStatusCodeForVirtDir(virDir, '/').then((result) {
-        expect(result, HttpStatus.notFound);
-      });
+      var result = await statusCodeForVirtDir(virDir, '/');
+      expect(result, HttpStatus.notFound);
     });
 
-    testVirtualDir('dir-not-exists', (dir) {
+    testVirtualDir('dir-not-exists', (dir) async {
       var virDir = VirtualDirectory(pathos.join('${dir.path}foo'));
 
-      return getStatusCodeForVirtDir(virDir, '/').then((result) {
-        expect(result, HttpStatus.notFound);
-      });
+      var result = await statusCodeForVirtDir(virDir, '/');
+      expect(result, HttpStatus.notFound);
     });
   });
 
   group('serve-file', () {
     group('top-level', () {
-      testVirtualDir('file-exists', (dir) {
+      testVirtualDir('file-exists', (dir) async {
         File('${dir.path}/file')..createSync();
         var virDir = VirtualDirectory(dir.path);
-        return getStatusCodeForVirtDir(virDir, '/file').then((result) {
-          expect(result, HttpStatus.ok);
-        });
+        var result = await statusCodeForVirtDir(virDir, '/file');
+        expect(result, HttpStatus.ok);
       });
 
-      testVirtualDir('file-not-exists', (dir) {
+      testVirtualDir('file-not-exists', (dir) async {
         var virDir = VirtualDirectory(dir.path);
 
-        return getStatusCodeForVirtDir(virDir, '/file').then((result) {
-          expect(result, HttpStatus.notFound);
-        });
+        var result = await statusCodeForVirtDir(virDir, '/file');
+        expect(result, HttpStatus.notFound);
       });
     });
 
     group('in-dir', () {
-      testVirtualDir('file-exists', (dir) {
+      testVirtualDir('file-exists', (dir) async {
         var dir2 = Directory('${dir.path}/dir')..createSync();
         File('${dir2.path}/file')..createSync();
         var virDir = VirtualDirectory(dir.path);
-        return getStatusCodeForVirtDir(virDir, '/dir/file').then((result) {
-          expect(result, HttpStatus.ok);
-        });
+        var result = await statusCodeForVirtDir(virDir, '/dir/file');
+        expect(result, HttpStatus.ok);
       });
 
-      testVirtualDir('file-not-exists', (dir) {
+      testVirtualDir('file-not-exists', (dir) async {
         Directory('${dir.path}/dir')..createSync();
         File('${dir.path}/file')..createSync();
         var virDir = VirtualDirectory(dir.path);
 
-        return getStatusCodeForVirtDir(virDir, '/dir/file').then((result) {
-          expect(result, HttpStatus.notFound);
-        });
+        var result = await statusCodeForVirtDir(virDir, '/dir/file');
+        expect(result, HttpStatus.notFound);
       });
     });
   });
 
   group('serve-dir', () {
     group('top-level', () {
-      testVirtualDir('simple', (dir) {
+      testVirtualDir('simple', (dir) async {
         var virDir = VirtualDirectory(dir.path);
         virDir.allowDirectoryListing = true;
 
-        return getAsString(virDir, '/').then((result) {
-          expect(result, contains('Index of &#47'));
-        });
+        var result = await fetchAsString(virDir, '/');
+        expect(result, contains('Index of &#47'));
       });
 
-      testVirtualDir('files', (dir) {
+      testVirtualDir('files', (dir) async {
         var virDir = VirtualDirectory(dir.path);
         for (var i = 0; i < 10; i++) {
           File('${dir.path}/$i').createSync();
         }
         virDir.allowDirectoryListing = true;
 
-        return getAsString(virDir, '/').then((result) {
-          expect(result, contains('Index of &#47'));
-        });
+        var result = await fetchAsString(virDir, '/');
+        expect(result, contains('Index of &#47'));
       });
 
-      testVirtualDir('dir-href', (dir) {
+      testVirtualDir('dir-href', (dir) async {
         var virDir = VirtualDirectory(dir.path);
         Directory('${dir.path}/dir').createSync();
         virDir.allowDirectoryListing = true;
 
-        return getAsString(virDir, '/').then((result) {
-          expect(result, contains('<a href="dir/">'));
-        });
+        var result = await fetchAsString(virDir, '/');
+        expect(result, contains('<a href="dir/">'));
       });
 
-      testVirtualDir('dirs', (dir) {
+      testVirtualDir('dirs', (dir) async {
         var virDir = VirtualDirectory(dir.path);
         for (var i = 0; i < 10; i++) {
           Directory('${dir.path}/$i').createSync();
         }
         virDir.allowDirectoryListing = true;
 
-        return getAsString(virDir, '/').then((result) {
-          expect(result, contains('Index of &#47'));
-        });
+        var result = await fetchAsString(virDir, '/');
+        expect(result, contains('Index of &#47'));
       });
 
-      testVirtualDir('encoded-dir', (dir) {
+      testVirtualDir('encoded-dir', (dir) async {
         var virDir = VirtualDirectory(dir.path);
         Directory('${dir.path}/alert(\'hacked!\');').createSync();
         virDir.allowDirectoryListing = true;
 
-        return getAsString(virDir, '/alert(\'hacked!\');').then((result) {
-          expect(result, contains('&#47;alert(&#39;hacked!&#39;);&#47;'));
-        });
+        var result = await fetchAsString(virDir, '/alert(\'hacked!\');');
+        expect(result, contains('&#47;alert(&#39;hacked!&#39;);&#47;'));
       });
 
-      testVirtualDir('non-ascii-dir', (dir) {
+      testVirtualDir('non-ascii-dir', (dir) async {
         var virDir = VirtualDirectory(dir.path);
         Directory('${dir.path}/æø').createSync();
         virDir.allowDirectoryListing = true;
 
-        return getAsString(virDir, '/').then((result) {
-          expect(result, contains('æø'));
-        });
+        var result = await fetchAsString(virDir, '/');
+        expect(result, contains('æø'));
       });
 
-      testVirtualDir('content-type', (dir) {
+      testVirtualDir('content-type', (dir) async {
         var virDir = VirtualDirectory(dir.path);
         virDir.allowDirectoryListing = true;
 
-        return getHeaders(virDir, '/').then((headers) {
-          var contentType = headers.contentType.toString();
-          expect(contentType, 'text/html; charset=utf-8');
-        });
+        var headers = await fetchHEaders(virDir, '/');
+        var contentType = headers.contentType.toString();
+        expect(contentType, 'text/html; charset=utf-8');
       });
 
       if (!Platform.isWindows) {
-        testVirtualDir('recursive-link', (dir) {
+        testVirtualDir('recursive-link', (dir) async {
           Link('${dir.path}/recursive')..createSync('.');
           var virDir = VirtualDirectory(dir.path);
           virDir.allowDirectoryListing = true;
 
-          return Future.wait([
-            getAsString(virDir, '/').then((s) => s.contains('recursive&#47;')),
-            getAsString(virDir, '/').then((s) => !s.contains('../')),
-            getAsString(virDir, '/').then((s) => s.contains('Index of &#47;')),
-            getAsString(virDir, '/recursive')
+          var result = await Future.wait([
+            fetchAsString(virDir, '/')
                 .then((s) => s.contains('recursive&#47;')),
-            getAsString(virDir, '/recursive')
+            fetchAsString(virDir, '/').then((s) => !s.contains('../')),
+            fetchAsString(virDir, '/')
+                .then((s) => s.contains('Index of &#47;')),
+            fetchAsString(virDir, '/recursive')
+                .then((s) => s.contains('recursive&#47;')),
+            fetchAsString(virDir, '/recursive')
                 .then((s) => s.contains('..&#47;')),
-            getAsString(virDir, '/recursive')
+            fetchAsString(virDir, '/recursive')
                 .then((s) => s.contains('Index of &#47;recursive'))
-          ]).then((result) {
-            expect(result, equals([true, true, true, true, true, true]));
-          });
+          ]);
+          expect(result, equals([true, true, true, true, true, true]));
         });
 
-        testVirtualDir('encoded-path', (dir) {
+        testVirtualDir('encoded-path', (dir) async {
           var virDir = VirtualDirectory(dir.path);
           Directory('${dir.path}/javascript:alert(document);"').createSync();
           virDir.allowDirectoryListing = true;
 
-          return getAsString(virDir, '/').then((result) {
-            expect(result, contains('javascript%3Aalert(document)%3B%22/'));
-          });
+          var result = await fetchAsString(virDir, '/');
+          expect(result, contains('javascript%3Aalert(document)%3B%22/'));
         });
 
-        testVirtualDir('encoded-special', (dir) {
+        testVirtualDir('encoded-special', (dir) async {
           var virDir = VirtualDirectory(dir.path);
           Directory('${dir.path}/<>&"').createSync();
           virDir.allowDirectoryListing = true;
 
-          return getAsString(virDir, '/').then((result) {
-            expect(result, contains('&lt;&gt;&amp;&quot;&#47;'));
-            expect(result, contains('href="%3C%3E%26%22/"'));
-          });
+          var result = await fetchAsString(virDir, '/');
+          expect(result, contains('&lt;&gt;&amp;&quot;&#47;'));
+          expect(result, contains('href="%3C%3E%26%22/"'));
         });
       }
     });
 
     group('custom', () {
-      testVirtualDir('simple', (dir) {
+      testVirtualDir('simple', (dir) async {
         var virDir = VirtualDirectory(dir.path);
         virDir.allowDirectoryListing = true;
         virDir.directoryHandler = (dir2, request) {
@@ -212,12 +198,11 @@ void main() {
           request.response.close();
         };
 
-        return getAsString(virDir, '/').then((result) {
-          expect(result, 'My handler /');
-        });
+        var result = await fetchAsString(virDir, '/');
+        expect(result, 'My handler /');
       });
 
-      testVirtualDir('index-1', (dir) {
+      testVirtualDir('index-1', (dir) async {
         File('${dir.path}/index.html').writeAsStringSync('index file');
         var virDir = VirtualDirectory(dir.path);
         virDir.allowDirectoryListing = true;
@@ -227,12 +212,11 @@ void main() {
           return virDir.serveFile(File(indexUri.toFilePath()), request);
         };
 
-        return getAsString(virDir, '/').then((result) {
-          expect(result, 'index file');
-        });
+        var result = await fetchAsString(virDir, '/');
+        expect(result, 'index file');
       });
 
-      testVirtualDir('index-2', (dir) {
+      testVirtualDir('index-2', (dir) async {
         Directory('${dir.path}/dir').createSync();
         var virDir = VirtualDirectory(dir.path);
         virDir.allowDirectoryListing = true;
@@ -241,13 +225,12 @@ void main() {
           fail('not expected');
         };
 
-        return getStatusCodeForVirtDir(virDir, '/dir', followRedirects: false)
-            .then((result) {
-          expect(result, 301);
-        });
+        var result =
+            await statusCodeForVirtDir(virDir, '/dir', followRedirects: false);
+        expect(result, 301);
       });
 
-      testVirtualDir('index-3', (dir) {
+      testVirtualDir('index-3', (dir) async {
         File('${dir.path}/dir/index.html')
           ..createSync(recursive: true)
           ..writeAsStringSync('index file');
@@ -258,12 +241,11 @@ void main() {
           var indexUri = Uri.file(dir2.path).resolve('index.html');
           return virDir.serveFile(File(indexUri.toFilePath()), request);
         };
-        return getAsString(virDir, '/dir').then((result) {
-          expect(result, 'index file');
-        });
+        var result = await fetchAsString(virDir, '/dir');
+        expect(result, 'index file');
       });
 
-      testVirtualDir('index-4', (dir) {
+      testVirtualDir('index-4', (dir) async {
         File('${dir.path}/dir/index.html')
           ..createSync(recursive: true)
           ..writeAsStringSync('index file');
@@ -274,14 +256,13 @@ void main() {
           var indexUri = Uri.file(dir2.path).resolve('index.html');
           virDir.serveFile(File(indexUri.toFilePath()), request);
         };
-        return getAsString(virDir, '/dir/').then((result) {
-          expect(result, 'index file');
-        });
+        var result = await fetchAsString(virDir, '/dir/');
+        expect(result, 'index file');
       });
     });
 
     group('path-prefix', () {
-      testVirtualDir('simple', (dir) {
+      testVirtualDir('simple', (dir) async {
         var virDir = VirtualDirectory(dir.path, pathPrefix: '/path');
         virDir.allowDirectoryListing = true;
         virDir.directoryHandler = (d, request) {
@@ -289,12 +270,11 @@ void main() {
           request.response.close();
         };
 
-        return getStatusCodeForVirtDir(virDir, '/path').then((result) {
-          expect(result, HttpStatus.ok);
-        });
+        var result = await statusCodeForVirtDir(virDir, '/path');
+        expect(result, HttpStatus.ok);
       });
 
-      testVirtualDir('trailing-slash', (dir) {
+      testVirtualDir('trailing-slash', (dir) async {
         var virDir = VirtualDirectory(dir.path, pathPrefix: '/path/');
         virDir.allowDirectoryListing = true;
         virDir.directoryHandler = (d, request) {
@@ -302,16 +282,14 @@ void main() {
           request.response.close();
         };
 
-        return getStatusCodeForVirtDir(virDir, '/path').then((result) {
-          expect(result, HttpStatus.ok);
-        });
+        var result = await statusCodeForVirtDir(virDir, '/path');
+        expect(result, HttpStatus.ok);
       });
 
-      testVirtualDir('not-matching', (dir) {
+      testVirtualDir('not-matching', (dir) async {
         var virDir = VirtualDirectory(dir.path, pathPrefix: '/path/');
-        return getStatusCodeForVirtDir(virDir, '/').then((result) {
-          expect(result, HttpStatus.notFound);
-        });
+        var result = await statusCodeForVirtDir(virDir, '/');
+        expect(result, HttpStatus.notFound);
       });
     });
   });
@@ -319,84 +297,78 @@ void main() {
   group('links', () {
     if (!Platform.isWindows) {
       group('follow-links', () {
-        testVirtualDir('dir-link', (dir) {
+        testVirtualDir('dir-link', (dir) async {
           var dir2 = Directory('${dir.path}/dir2')..createSync();
           Link('${dir.path}/dir3')..createSync('dir2');
           File('${dir2.path}/file')..createSync();
           var virDir = VirtualDirectory(dir.path);
           virDir.followLinks = true;
 
-          return getStatusCodeForVirtDir(virDir, '/dir3/file').then((result) {
-            expect(result, HttpStatus.ok);
-          });
+          var result = await statusCodeForVirtDir(virDir, '/dir3/file');
+          expect(result, HttpStatus.ok);
         });
 
-        testVirtualDir('root-link', (dir) {
+        testVirtualDir('root-link', (dir) async {
           Link('${dir.path}/dir3')..createSync('.');
           File('${dir.path}/file')..createSync();
           var virDir = VirtualDirectory(dir.path);
           virDir.followLinks = true;
 
-          return getStatusCodeForVirtDir(virDir, '/dir3/file').then((result) {
-            expect(result, HttpStatus.ok);
-          });
+          var result = await statusCodeForVirtDir(virDir, '/dir3/file');
+          expect(result, HttpStatus.ok);
         });
 
         group('bad-links', () {
-          testVirtualDir('absolute-link', (dir) {
+          testVirtualDir('absolute-link', (dir) async {
             File('${dir.path}/file')..createSync();
             Link('${dir.path}/file2')..createSync('${dir.path}/file');
             var virDir = VirtualDirectory(dir.path);
             virDir.followLinks = true;
 
-            return getStatusCodeForVirtDir(virDir, '/file2').then((result) {
-              expect(result, HttpStatus.notFound);
-            });
+            var result = await statusCodeForVirtDir(virDir, '/file2');
+            expect(result, HttpStatus.notFound);
           });
 
-          testVirtualDir('relative-parent-link', (dir) {
+          testVirtualDir('relative-parent-link', (dir) async {
             var dir2 = Directory('${dir.path}/dir')..createSync();
             File('${dir.path}/file')..createSync();
             Link('${dir2.path}/file')..createSync('../file');
             var virDir = VirtualDirectory(dir2.path);
             virDir.followLinks = true;
 
-            return getStatusCodeForVirtDir(virDir, '/dir3/file').then((result) {
-              expect(result, HttpStatus.notFound);
-            });
+            var result = await statusCodeForVirtDir(virDir, '/dir3/file');
+            expect(result, HttpStatus.notFound);
           });
         });
       });
 
       group('not-follow-links', () {
-        testVirtualDir('dir-link', (dir) {
+        testVirtualDir('dir-link', (dir) async {
           var dir2 = Directory('${dir.path}/dir2')..createSync();
           Link('${dir.path}/dir3')..createSync('dir2');
           File('${dir2.path}/file')..createSync();
           var virDir = VirtualDirectory(dir.path);
           virDir.followLinks = false;
 
-          return getStatusCodeForVirtDir(virDir, '/dir3/file').then((result) {
-            expect(result, HttpStatus.notFound);
-          });
+          var result = await statusCodeForVirtDir(virDir, '/dir3/file');
+          expect(result, HttpStatus.notFound);
         });
       });
 
       group('follow-links', () {
         group('no-root-jail', () {
-          testVirtualDir('absolute-link', (dir) {
+          testVirtualDir('absolute-link', (dir) async {
             File('${dir.path}/file')..createSync();
             Link('${dir.path}/file2')..createSync('${dir.path}/file');
             var virDir = VirtualDirectory(dir.path);
             virDir.followLinks = true;
             virDir.jailRoot = false;
 
-            return getStatusCodeForVirtDir(virDir, '/file2').then((result) {
-              expect(result, HttpStatus.ok);
-            });
+            var result = await statusCodeForVirtDir(virDir, '/file2');
+            expect(result, HttpStatus.ok);
           });
 
-          testVirtualDir('relative-parent-link', (dir) {
+          testVirtualDir('relative-parent-link', (dir) async {
             var dir2 = Directory('${dir.path}/dir')..createSync();
             File('${dir.path}/file')..createSync();
             Link('${dir2.path}/file')..createSync('../file');
@@ -404,9 +376,8 @@ void main() {
             virDir.followLinks = true;
             virDir.jailRoot = false;
 
-            return getStatusCodeForVirtDir(virDir, '/file').then((result) {
-              expect(result, HttpStatus.ok);
-            });
+            var result = await statusCodeForVirtDir(virDir, '/file');
+            expect(result, HttpStatus.ok);
           });
         });
       });
@@ -415,64 +386,58 @@ void main() {
 
   group('last-modified', () {
     group('file', () {
-      testVirtualDir('file-exists', (dir) {
+      testVirtualDir('file-exists', (dir) async {
         File('${dir.path}/file')..createSync();
         var virDir = VirtualDirectory(dir.path);
 
-        return getHeaders(virDir, '/file').then((headers) {
-          expect(headers.value(HttpHeaders.lastModifiedHeader), isNotNull);
-          var lastModified =
-              HttpDate.parse(headers.value(HttpHeaders.lastModifiedHeader));
+        var headers = await fetchHEaders(virDir, '/file');
+        expect(headers.value(HttpHeaders.lastModifiedHeader), isNotNull);
+        var lastModified =
+            HttpDate.parse(headers.value(HttpHeaders.lastModifiedHeader));
 
-          return getStatusCodeForVirtDir(virDir, '/file',
-              ifModifiedSince: lastModified);
-        }).then((result) {
-          expect(result, HttpStatus.notModified);
-        });
+        var result = await statusCodeForVirtDir(virDir, '/file',
+            ifModifiedSince: lastModified);
+        expect(result, HttpStatus.notModified);
       });
 
-      testVirtualDir('file-changes', (dir) {
+      testVirtualDir('file-changes', (dir) async {
         File('${dir.path}/file')..createSync();
         var virDir = VirtualDirectory(dir.path);
 
-        return getHeaders(virDir, '/file').then((headers) {
-          expect(headers.value(HttpHeaders.lastModifiedHeader), isNotNull);
-          var lastModified =
-              HttpDate.parse(headers.value(HttpHeaders.lastModifiedHeader));
+        var headers = await fetchHEaders(virDir, '/file');
+        expect(headers.value(HttpHeaders.lastModifiedHeader), isNotNull);
+        var lastModified =
+            HttpDate.parse(headers.value(HttpHeaders.lastModifiedHeader));
 
-          // Fake file changed by moving date back in time.
-          lastModified = lastModified.subtract(const Duration(seconds: 10));
+        // Fake file changed by moving date back in time.
+        lastModified = lastModified.subtract(const Duration(seconds: 10));
 
-          return getStatusCodeForVirtDir(virDir, '/file',
-              ifModifiedSince: lastModified);
-        }).then((result) {
-          expect(result, HttpStatus.ok);
-        });
+        var result = await statusCodeForVirtDir(virDir, '/file',
+            ifModifiedSince: lastModified);
+        expect(result, HttpStatus.ok);
       });
     });
   });
 
   group('content-type', () {
     group('mime-type', () {
-      testVirtualDir('from-path', (dir) {
+      testVirtualDir('from-path', (dir) async {
         File('${dir.path}/file.jpg')..createSync();
         var virDir = VirtualDirectory(dir.path);
 
-        return getHeaders(virDir, '/file.jpg').then((headers) {
-          var contentType = headers.contentType.toString();
-          expect(contentType, 'image/jpeg');
-        });
+        var headers = await fetchHEaders(virDir, '/file.jpg');
+        var contentType = headers.contentType.toString();
+        expect(contentType, 'image/jpeg');
       });
 
-      testVirtualDir('from-magic-number', (dir) {
+      testVirtualDir('from-magic-number', (dir) async {
         var file = File('${dir.path}/file.jpg')..createSync();
         file.writeAsBytesSync([0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A]);
         var virDir = VirtualDirectory(dir.path);
 
-        return getHeaders(virDir, '/file.jpg').then((headers) {
-          var contentType = headers.contentType.toString();
-          expect(contentType, 'image/png');
-        });
+        var headers = await fetchHEaders(virDir, '/file.jpg');
+        var contentType = headers.contentType.toString();
+        expect(contentType, 'image/png');
       });
     });
   });
@@ -486,154 +451,140 @@ void main() {
       virDir = VirtualDirectory(dir.path);
     }
 
-    testVirtualDir('range', (dir) {
+    testVirtualDir('range', (dir) async {
       prepare(dir);
-      Future test(int from, int to, [List<int> expected, String contentRange]) {
+      Future<void> check(int from, int to,
+          [List<int> expected, String contentRange]) async {
         expected ??= fileContent.sublist(from, to + 1);
         contentRange ??= 'bytes $from-$to/${fileContent.length}';
-        return getContentAndResponse(virDir, '/file', from: from, to: to)
-            .then(expectAsync1((result) {
-          var content = result[0];
-          var response = result[1];
-          expect(content, expected);
-          expect(response.headers[HttpHeaders.contentRangeHeader][0],
-              contentRange);
-          expect(expected.length, response.headers.contentLength);
-          expect(response.statusCode, HttpStatus.partialContent);
-        }));
+        var result =
+            await fetchContentAndResponse(virDir, '/file', from: from, to: to);
+        var content = result[0];
+        var response = result[1];
+        expect(content, expected);
+        expect(
+            response.headers[HttpHeaders.contentRangeHeader][0], contentRange);
+        expect(expected.length, response.headers.contentLength);
+        expect(response.statusCode, HttpStatus.partialContent);
       }
 
-      return Future.forEach([
-        () => test(0, 0),
-        () => test(0, 1),
-        () => test(1, 2),
-        () => test(1, 9),
-        () => test(0, 9),
-        () => test(8, 9),
-        () => test(9, 9),
-        () => test(0, 10, fileContent, 'bytes 0-9/10'),
-        () => test(9, 10, [9], 'bytes 9-9/10'),
-        () => test(0, 1000, fileContent, 'bytes 0-9/10'),
-      ], (f) => f().then(expectAsync1((_) {})));
+      await check(0, 0);
+      await check(0, 1);
+      await check(1, 2);
+      await check(1, 9);
+      await check(0, 9);
+      await check(8, 9);
+      await check(9, 9);
+      await check(0, 10, fileContent, 'bytes 0-9/10');
+      await check(9, 10, [9], 'bytes 9-9/10');
+      await check(0, 1000, fileContent, 'bytes 0-9/10');
     });
 
-    testVirtualDir('prefix-range', (dir) {
+    testVirtualDir('prefix-range', (dir) async {
       prepare(dir);
-      Future test(int from,
+      Future<void> check(int from,
           [List<int> expected,
           String contentRange,
           bool expectContentRange = true,
-          int expectedStatusCode = HttpStatus.partialContent]) {
+          int expectedStatusCode = HttpStatus.partialContent]) async {
         expected ??= fileContent.sublist(from, fileContent.length);
         if (contentRange == null && expectContentRange) {
           contentRange = 'bytes $from-'
               '${fileContent.length - 1}/'
               '${fileContent.length}';
         }
-        return getContentAndResponse(virDir, '/file', from: from)
-            .then(expectAsync1((result) {
-          var content = result[0];
-          var response = result[1];
-          expect(content, expected);
-          if (expectContentRange) {
-            expect(response.headers[HttpHeaders.contentRangeHeader][0],
-                contentRange);
-          } else {
-            expect(response.headers[HttpHeaders.contentRangeHeader], null);
-          }
-          expect(response.statusCode, expectedStatusCode);
-        }));
+        var result = await fetchContentAndResponse(virDir, '/file', from: from);
+        var content = result[0];
+        var response = result[1];
+        expect(content, expected);
+        if (expectContentRange) {
+          expect(response.headers[HttpHeaders.contentRangeHeader][0],
+              contentRange);
+        } else {
+          expect(response.headers[HttpHeaders.contentRangeHeader], null);
+        }
+        expect(response.statusCode, expectedStatusCode);
       }
 
-      return Future.forEach([
-        () => test(0),
-        () => test(1),
-        () => test(9),
-        () => test(10, fileContent, null, false, HttpStatus.ok),
-        () => test(11, fileContent, null, false, HttpStatus.ok),
-        () => test(1000, fileContent, null, false, HttpStatus.ok),
-      ], (f) => f().then(expectAsync1((_) {})));
+      await check(0);
+      await check(1);
+      await check(9);
+      await check(10, fileContent, null, false, HttpStatus.ok);
+      await check(11, fileContent, null, false, HttpStatus.ok);
+      await check(1000, fileContent, null, false, HttpStatus.ok);
     });
 
-    testVirtualDir('suffix-range', (dir) {
+    testVirtualDir('suffix-range', (dir) async {
       prepare(dir);
-      Future test(int to, [List<int> expected, String contentRange]) {
+      Future<void> check(int to,
+          [List<int> expected, String contentRange]) async {
         expected ??=
             fileContent.sublist(fileContent.length - to, fileContent.length);
         contentRange ??= 'bytes ${fileContent.length - to}-'
             '${fileContent.length - 1}/'
             '${fileContent.length}';
-        return getContentAndResponse(virDir, '/file', to: to)
-            .then(expectAsync1((result) {
-          var content = result[0];
-          var response = result[1];
-          expect(content, expected);
-          expect(response.headers[HttpHeaders.contentRangeHeader][0],
-              contentRange);
-          expect(response.statusCode, HttpStatus.partialContent);
-        }));
+        var result = await fetchContentAndResponse(virDir, '/file', to: to);
+        var content = result[0];
+        var response = result[1];
+        expect(content, expected);
+        expect(
+            response.headers[HttpHeaders.contentRangeHeader][0], contentRange);
+        expect(response.statusCode, HttpStatus.partialContent);
       }
 
-      return Future.forEach([
-        () => test(1),
-        () => test(2),
-        () => test(9),
-        () => test(10),
-        () => test(11, fileContent, 'bytes 0-9/10'),
-        () => test(1000, fileContent, 'bytes 0-9/10')
-      ], (f) => f().then(expectAsync1((_) {})));
+      await check(1);
+      await check(2);
+      await check(9);
+      await check(10);
+      await check(11, fileContent, 'bytes 0-9/10');
+      await check(1000, fileContent, 'bytes 0-9/10');
     });
 
-    testVirtualDir('unsatisfiable-range', (dir) {
+    testVirtualDir('unsatisfiable-range', (dir) async {
       prepare(dir);
-      Future test(int from, int to) {
-        return getContentAndResponse(virDir, '/file', from: from, to: to)
-            .then(expectAsync1((result) {
-          var content = result[0];
-          var response = result[1];
-          expect(content.length, 0);
-          expect(response.headers[HttpHeaders.contentRangeHeader], isNull);
-          expect(response.statusCode, HttpStatus.requestedRangeNotSatisfiable);
-        }));
+      Future<void> check(int from, int to) async {
+        var result =
+            await fetchContentAndResponse(virDir, '/file', from: from, to: to);
+        var content = result[0];
+        var response = result[1];
+        expect(content.length, 0);
+        expect(response.headers[HttpHeaders.contentRangeHeader], isNull);
+        expect(response.statusCode, HttpStatus.requestedRangeNotSatisfiable);
       }
 
-      return Future.forEach(
-          [() => test(10, 11), () => test(10, 1000), () => test(1000, 1000)],
-          (f) => f().then(expectAsync1((_) {})));
+      await check(10, 11);
+      await check(10, 1000);
+      await check(1000, 1000);
     });
 
-    testVirtualDir('invalid-range', (dir) {
+    testVirtualDir('invalid-range', (dir) async {
       prepare(dir);
-      Future test(int from, int to) {
-        return getContentAndResponse(virDir, '/file', from: from, to: to)
-            .then(expectAsync1((result) {
-          var content = result[0];
-          var response = result[1];
-          expect(content, fileContent);
-          expect(response.headers[HttpHeaders.contentRangeHeader], isNull);
-          expect(response.statusCode, HttpStatus.ok);
-        }));
+      Future<void> check(int from, int to) async {
+        var result =
+            await fetchContentAndResponse(virDir, '/file', from: from, to: to);
+        var content = result[0];
+        var response = result[1];
+        expect(content, fileContent);
+        expect(response.headers[HttpHeaders.contentRangeHeader], isNull);
+        expect(response.statusCode, HttpStatus.ok);
       }
 
-      return Future.forEach([
-        () => test(1, 0),
-        () => test(10, 0),
-        () => test(1000, 999),
-        () => test(null, 0), // This is effectively range 10-9.
-      ], (f) => f().then(expectAsync1((_) {})));
+      await check(1, 0);
+      await check(10, 0);
+      await check(1000, 999);
+      await check(null, 0); // This is effectively range 10-9.
     });
   });
 
   group('error-page', () {
-    testVirtualDir('default', (dir) {
+    testVirtualDir('default', (dir) async {
       var virDir = VirtualDirectory(pathos.join(dir.path, 'foo'));
 
-      return getAsString(virDir, '/').then((result) {
-        expect(result, matches(RegExp('404.*Not Found')));
-      });
+      var result = await fetchAsString(virDir, '/');
+      expect(result, matches(RegExp('404.*Not Found')));
     });
 
-    testVirtualDir('custom', (dir) {
+    testVirtualDir('custom', (dir) async {
       var virDir = VirtualDirectory(pathos.join(dir.path, 'foo'));
 
       virDir.errorPageHandler = (request) {
@@ -642,75 +593,67 @@ void main() {
         request.response.close();
       };
 
-      return getAsString(virDir, '/').then((result) {
-        expect(result, 'my-page 404');
-      });
+      var result = await fetchAsString(virDir, '/');
+      expect(result, 'my-page 404');
     });
   });
 
   group('escape-root', () {
-    testVirtualDir('escape1', (dir) {
+    testVirtualDir('escape1', (dir) async {
       var virDir = VirtualDirectory(dir.path);
       virDir.allowDirectoryListing = true;
 
-      return getStatusCodeForVirtDir(virDir, '/../').then((result) {
-        expect(result, HttpStatus.notFound);
-      });
+      var result = await statusCodeForVirtDir(virDir, '/../');
+      expect(result, HttpStatus.notFound);
     });
 
-    testVirtualDir('escape2', (dir) {
+    testVirtualDir('escape2', (dir) async {
       Directory('${dir.path}/dir').createSync();
       var virDir = VirtualDirectory(dir.path);
       virDir.allowDirectoryListing = true;
 
-      return getStatusCodeForVirtDir(virDir, '/dir/../../').then((result) {
-        expect(result, HttpStatus.notFound);
-      });
+      var result = await statusCodeForVirtDir(virDir, '/dir/../../');
+      expect(result, HttpStatus.notFound);
     });
   },
       skip: 'Broken. Likely due to dart:core Uri changes.'
           'See https://github.com/dart-lang/http_server/issues/40');
 
   group('url-decode', () {
-    testVirtualDir('with-space', (dir) {
+    testVirtualDir('with-space', (dir) async {
       File('${dir.path}/my file')..createSync();
       var virDir = VirtualDirectory(dir.path);
 
-      return getStatusCodeForVirtDir(virDir, '/my file').then((result) {
-        expect(result, HttpStatus.ok);
-      });
+      var result = await statusCodeForVirtDir(virDir, '/my file');
+      expect(result, HttpStatus.ok);
     });
 
-    testVirtualDir('encoded-space', (dir) {
+    testVirtualDir('encoded-space', (dir) async {
       File('${dir.path}/my file')..createSync();
       var virDir = VirtualDirectory(dir.path);
 
-      return getStatusCodeForVirtDir(virDir, '/my%20file').then((result) {
-        expect(result, HttpStatus.notFound);
-      });
+      var result = await statusCodeForVirtDir(virDir, '/my%20file');
+      expect(result, HttpStatus.notFound);
     });
 
-    testVirtualDir('encoded-path-separator', (dir) {
+    testVirtualDir('encoded-path-separator', (dir) async {
       Directory('${dir.path}/a').createSync();
       Directory('${dir.path}/a/b').createSync();
       Directory('${dir.path}/a/b/c').createSync();
       var virDir = VirtualDirectory(dir.path);
       virDir.allowDirectoryListing = true;
 
-      return getStatusCodeForVirtDir(virDir, '/a%2fb/c', rawPath: true)
-          .then((result) {
-        expect(result, HttpStatus.notFound);
-      });
+      var result =
+          await statusCodeForVirtDir(virDir, '/a%2fb/c', rawPath: true);
+      expect(result, HttpStatus.notFound);
     });
 
-    testVirtualDir('encoded-null', (dir) {
+    testVirtualDir('encoded-null', (dir) async {
       var virDir = VirtualDirectory(dir.path);
       virDir.allowDirectoryListing = true;
 
-      return getStatusCodeForVirtDir(virDir, '/%00', rawPath: true)
-          .then((result) {
-        expect(result, HttpStatus.notFound);
-      });
+      var result = await statusCodeForVirtDir(virDir, '/%00', rawPath: true);
+      expect(result, HttpStatus.notFound);
     });
 
     group('broken', () {
@@ -727,7 +670,7 @@ void main() {
   });
 
   group('serve-file', () {
-    testVirtualDir('from-dir-handler', (dir) {
+    testVirtualDir('from-dir-handler', (dir) async {
       File('${dir.path}/file')..writeAsStringSync('file contents');
       var virDir = VirtualDirectory(dir.path);
       virDir.allowDirectoryListing = true;
@@ -736,12 +679,10 @@ void main() {
         return virDir.serveFile(File('${d.path}/file'), request);
       };
 
-      return getAsString(virDir, '/').then((result) {
-        expect(result, 'file contents');
-        return getHeaders(virDir, '/').then(expectAsync1((headers) {
-          expect('file contents'.length, headers.contentLength);
-        }));
-      });
+      var result = await fetchAsString(virDir, '/');
+      expect(result, 'file contents');
+      var headers = await fetchHEaders(virDir, '/');
+      expect('file contents'.length, headers.contentLength);
     });
   });
 }

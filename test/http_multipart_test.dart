@@ -6,9 +6,9 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
-import "package:http_server/http_server.dart";
-import "package:mime/mime.dart";
-import "package:test/test.dart";
+import 'package:http_server/http_server.dart';
+import 'package:mime/mime.dart';
+import 'package:test/test.dart';
 
 // Representation of a form field from a multipart/form-data form POST body.
 class FormField {
@@ -24,6 +24,7 @@ class FormField {
 
   FormField(this.name, this.value, {this.contentType, this.filename});
 
+  @override
   bool operator ==(other) =>
       other is FormField &&
       _valuesEqual(value, other.value) &&
@@ -31,8 +32,10 @@ class FormField {
       contentType == other.contentType &&
       filename == other.filename;
 
+  @override
   int get hashCode => name.hashCode;
 
+  @override
   String toString() {
     return "FormField('$name', '$value', '$contentType', '$filename')";
   }
@@ -58,40 +61,34 @@ class FormField {
 Future _postDataTest(List<int> message, String contentType, String boundary,
     List<FormField> expectedFields,
     {Encoding defaultEncoding = latin1}) async {
-  var addr = (await InternetAddress.lookup("localhost"))[0];
+  var addr = (await InternetAddress.lookup('localhost'))[0];
 
   var server = await HttpServer.bind(addr, 0);
 
-  server.listen((request) {
+  server.listen((request) async {
     var boundary = request.headers.contentType.parameters['boundary'];
-    MimeMultipartTransformer(boundary)
+    var fields = await MimeMultipartTransformer(boundary)
         .bind(request)
         .map((part) =>
             HttpMultipartFormData.parse(part, defaultEncoding: defaultEncoding))
-        .map((multipart) {
-          Future future;
-          if (multipart.isText) {
-            future = multipart.join();
-          } else {
-            future = multipart.fold([], (b, s) => b..addAll(s));
-          }
-          return future.then((data) {
-            String contentType;
-            if (multipart.contentType != null) {
-              contentType = multipart.contentType.mimeType;
-            }
-            return FormField(
-                multipart.contentDisposition.parameters['name'], data,
-                contentType: contentType,
-                filename: multipart.contentDisposition.parameters['filename']);
-          });
-        })
-        .toList()
-        .then(Future.wait)
-        .then((fields) {
-          expect(fields, equals(expectedFields));
-          request.response.close().then((_) => server.close());
-        });
+        .asyncMap((multipart) async {
+      dynamic data;
+      if (multipart.isText) {
+        data = await multipart.join();
+      } else {
+        data = await multipart.fold([], (b, s) => b..addAll(s));
+      }
+      String contentType;
+      if (multipart.contentType != null) {
+        contentType = multipart.contentType.mimeType;
+      }
+      return FormField(multipart.contentDisposition.parameters['name'], data,
+          contentType: contentType,
+          filename: multipart.contentDisposition.parameters['filename']);
+    }).toList();
+    expect(fields, equals(expectedFields));
+    await request.response.close();
+    await server.close();
   });
 
   var client = HttpClient();

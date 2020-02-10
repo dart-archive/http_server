@@ -1,18 +1,19 @@
-library http_mock;
-
 import 'dart:async';
 import 'dart:collection';
 import 'dart:convert';
 import 'dart:io';
 
-class MockHttpHeaders implements HttpHeaders {
+class FakeHttpHeaders implements HttpHeaders {
   final Map<String, List<String>> _headers = HashMap<String, List<String>>();
 
-  operator [](key) => _headers[key];
+  @override
+  List<String> operator [](key) => _headers[key];
 
+  @override
   int get contentLength =>
       int.parse(_headers[HttpHeaders.contentLengthHeader][0]);
 
+  @override
   DateTime get ifModifiedSince {
     var values = _headers[HttpHeaders.ifModifiedSinceHeader];
     if (values != null) {
@@ -25,30 +26,38 @@ class MockHttpHeaders implements HttpHeaders {
     return null;
   }
 
+  @override
   set ifModifiedSince(DateTime ifModifiedSince) {
     // Format "ifModifiedSince" header with date in Greenwich Mean Time (GMT).
     var formatted = HttpDate.format(ifModifiedSince.toUtc());
     _set(HttpHeaders.ifModifiedSinceHeader, formatted);
   }
 
+  @override
   ContentType contentType;
 
-  void set(String name, Object value) {
+  @override
+  void set(String name, Object value, {bool preserveHeaderCase = false}) {
+    if (preserveHeaderCase) {
+      throw ArgumentError('preserveHeaderCase not supported');
+    }
     name = name.toLowerCase();
     _headers.remove(name);
     _addAll(name, value);
   }
 
+  @override
   String value(String name) {
     name = name.toLowerCase();
     var values = _headers[name];
     if (values == null) return null;
     if (values.length > 1) {
-      throw HttpException("More than one value for header $name");
+      throw HttpException('More than one value for header $name');
     }
     return values[0];
   }
 
+  @override
   String toString() => '$runtimeType : $_headers';
 
   // [name] must be a lower-case version of the name.
@@ -59,7 +68,7 @@ class MockHttpHeaders implements HttpHeaders {
       } else if (value is String) {
         _set(HttpHeaders.ifModifiedSinceHeader, value);
       } else {
-        throw HttpException("Unexpected type for header named $name");
+        throw HttpException('Unexpected type for header named $name');
       }
     } else {
       _addValue(name, value);
@@ -99,6 +108,7 @@ class MockHttpHeaders implements HttpHeaders {
   /*
    * Implemented to remove editor warnings
    */
+  @override
   dynamic noSuchMethod(Invocation invocation) {
     print([
       invocation.memberName,
@@ -111,14 +121,18 @@ class MockHttpHeaders implements HttpHeaders {
   }
 }
 
-class MockHttpRequest implements HttpRequest {
+class FakeHttpRequest implements HttpRequest {
+  @override
   final Uri uri;
-  final MockHttpResponse response = MockHttpResponse();
-  final HttpHeaders headers = MockHttpHeaders();
+  @override
+  final FakeHttpResponse response = FakeHttpResponse();
+  @override
+  final HttpHeaders headers = FakeHttpHeaders();
+  @override
   final String method = 'GET';
   final bool followRedirects;
 
-  MockHttpRequest(this.uri,
+  FakeHttpRequest(this.uri,
       {this.followRedirects = true, DateTime ifModifiedSince}) {
     if (ifModifiedSince != null) {
       headers.ifModifiedSince = ifModifiedSince;
@@ -128,17 +142,19 @@ class MockHttpRequest implements HttpRequest {
   /*
    * Implemented to remove editor warnings
    */
+  @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 
-class MockHttpResponse implements HttpResponse {
-  final HttpHeaders headers = MockHttpHeaders();
+class FakeHttpResponse implements HttpResponse {
+  @override
+  final HttpHeaders headers = FakeHttpHeaders();
   final Completer _completer = Completer();
   final List<int> _buffer = <int>[];
   String _reasonPhrase;
   Future _doneFuture;
 
-  MockHttpResponse() {
+  FakeHttpResponse() {
     _doneFuture = _completer.future.whenComplete(() {
       assert(!_isDone);
       _isDone = true;
@@ -147,35 +163,44 @@ class MockHttpResponse implements HttpResponse {
 
   bool _isDone = false;
 
+  @override
   int statusCode = HttpStatus.ok;
 
+  @override
   String get reasonPhrase => _findReasonPhrase(statusCode);
 
+  @override
   set reasonPhrase(String value) {
     _reasonPhrase = value;
   }
 
+  @override
   Future get done => _doneFuture;
 
+  @override
   Future close() {
     _completer.complete();
     return _doneFuture;
   }
 
+  @override
   void add(List<int> data) {
     _buffer.addAll(data);
   }
 
+  @override
   void addError(error, [StackTrace stackTrace]) {
     // doesn't seem to be hit...hmm...
   }
 
+  @override
   Future redirect(Uri location, {int status = HttpStatus.movedTemporarily}) {
     statusCode = status;
     headers.set(HttpHeaders.locationHeader, location.toString());
     return close();
   }
 
+  @override
   void write(Object obj) {
     var str = obj.toString();
     add(utf8.encode(str));
@@ -184,13 +209,14 @@ class MockHttpResponse implements HttpResponse {
   /*
    * Implemented to remove editor warnings
    */
+  @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 
-  String get mockContent => utf8.decode(_buffer);
+  String get fakeContent => utf8.decode(_buffer);
 
-  List<int> get mockContentBinary => _buffer;
+  List<int> get fakeContentBinary => _buffer;
 
-  bool get mockDone => _isDone;
+  bool get fakeDone => _isDone;
 
   // Copied from SDK http_impl.dart @ 845 on 2014-01-05
   // TODO: file an SDK bug to expose this on HttpStatus in some way
@@ -201,9 +227,9 @@ class MockHttpResponse implements HttpResponse {
 
     switch (statusCode) {
       case HttpStatus.notFound:
-        return "Not Found";
+        return 'Not Found';
       default:
-        return "Status $statusCode";
+        return 'Status $statusCode';
     }
   }
 }

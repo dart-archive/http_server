@@ -5,210 +5,140 @@
 import 'dart:async';
 import 'dart:io';
 
-import "package:test/test.dart";
-import "package:http_server/http_server.dart";
+import 'package:test/test.dart';
+import 'package:http_server/http_server.dart';
 
 import 'utils.dart';
 
 void main() {
   setUpAll(setupSecure);
 
-  test('empty-host', () {
-    expect(
-        HttpServer.bind('localhost', 0).then((server) {
-          VirtualHost(server);
-          return getStatusCode(server.port, '/').whenComplete(server.close);
-        }),
-        completion(equals(HttpStatus.forbidden)));
-  });
+  group('virtual host', () {
+    HttpServer server;
+    VirtualHost virHost;
 
-  test('empty-host-unhandled', () {
-    expect(
-        HttpServer.bind('localhost', 0).then((server) {
-          var virHost = VirtualHost(server);
-          expect(virHost.unhandled.first.then((request) {
-            request.response.close();
-          }), completion(isNull));
-          return getStatusCode(server.port, '/').whenComplete(server.close);
-        }),
-        completion(equals(HttpStatus.ok)));
-  });
-
-  test('single-host', () {
-    expect(
-        HttpServer.bind('localhost', 0).then((server) {
-          var virHost = VirtualHost(server);
-          expect(
-              virHost.addHost('*.host.com').first.then((request) {
-                request.response.close();
-              }),
-              completion(isNull));
-          return getStatusCode(server.port, '/', host: 'my.host.com')
-              .whenComplete(server.close);
-        }),
-        completion(equals(HttpStatus.ok)));
-  });
-
-  test('multiple-host', () {
-    expect(
-        HttpServer.bind('localhost', 0).then((server) {
-          var virHost = VirtualHost(server);
-          expect(
-              virHost.addHost('*.host1.com').first.then((request) {
-                request.response.close();
-              }),
-              completion(isNull));
-          expect(
-              virHost.addHost('*.host2.com').first.then((request) {
-                request.response.close();
-              }),
-              completion(isNull));
-          expect(
-              virHost.addHost('*.host3.com').first.then((request) {
-                request.response.close();
-              }),
-              completion(isNull));
-          return Future.wait([
-            getStatusCode(server.port, '/', host: 'my.host1.com'),
-            getStatusCode(server.port, '/', host: 'my.host2.com'),
-            getStatusCode(server.port, '/', host: 'my.host3.com')
-          ]).whenComplete(server.close);
-        }),
-        completion(equals([HttpStatus.ok, HttpStatus.ok, HttpStatus.ok])));
-  });
-
-  test('multiple-source-https', () {
-    expect(
-        Future.wait([
-          HttpServer.bind('localhost', 0),
-          HttpServer.bindSecure('localhost', 0, serverContext)
-        ]).then((servers) {
-          var virHost = VirtualHost();
-          virHost.addSource(servers[0]);
-          virHost.addSource(servers[1]);
-          virHost.unhandled.listen((request) {
-            request.response.close();
-          });
-          return Future.wait([
-            getStatusCode(servers[0].port, '/', host: 'myhost1.com'),
-            getStatusCode(servers[1].port, '/',
-                host: 'myhost2.com', secure: true)
-          ]).whenComplete(() => servers.forEach((s) => s.close()));
-        }),
-        completion(equals([HttpStatus.ok, HttpStatus.ok])));
-  });
-
-  group('domain', () {
-    test('specific-sub-domain', () {
-      expect(
-          HttpServer.bind('localhost', 0).then((server) {
-            var virHost = VirtualHost(server);
-            expect(
-                virHost.addHost('my1.host.com').first.then((request) {
-                  request.response.close();
-                }),
-                completion(isNull));
-            expect(
-                virHost.addHost('my2.host.com').first.then((request) {
-                  request.response.close();
-                }),
-                completion(isNull));
-            expect(
-                virHost.addHost('my3.host.com').first.then((request) {
-                  request.response.close();
-                }),
-                completion(isNull));
-            return Future.wait([
-              getStatusCode(server.port, '/', host: 'my1.host.com'),
-              getStatusCode(server.port, '/', host: 'my2.host.com'),
-              getStatusCode(server.port, '/', host: 'my3.host.com')
-            ]).whenComplete(server.close);
-          }),
-          completion(equals([HttpStatus.ok, HttpStatus.ok, HttpStatus.ok])));
+    setUp(() async {
+      server = await HttpServer.bind('localhost', 0);
+      virHost = VirtualHost(server);
     });
 
-    test('wildcard-sub-domain', () {
-      expect(
-          HttpServer.bind('localhost', 0).then((server) {
-            var virHost = VirtualHost(server);
-            expect(
-                virHost.addHost('*.host1.com').first.then((request) {
-                  request.response.close();
-                }),
-                completion(isNull));
-            expect(
-                virHost.addHost('*.host2.com').first.then((request) {
-                  request.response.close();
-                }),
-                completion(isNull));
-            expect(
-                virHost.addHost('*.host3.com').first.then((request) {
-                  request.response.close();
-                }),
-                completion(isNull));
-            return Future.wait([
-              getStatusCode(server.port, '/', host: 'my.host1.com'),
-              getStatusCode(server.port, '/', host: 'my.host2.com'),
-              getStatusCode(server.port, '/', host: 'my.host3.com')
-            ]).whenComplete(server.close);
-          }),
-          completion(equals([HttpStatus.ok, HttpStatus.ok, HttpStatus.ok])));
+    tearDown(() async {
+      await server.close();
+    });
+    test('empty-host', () async {
+      var statusCode = await fetchStatusCode(server.port, '/');
+      expect(statusCode, equals(HttpStatus.forbidden));
     });
 
-    test('mix-sub-domain', () {
-      expect(
-          HttpServer.bind('localhost', 0).then((server) {
-            var virHost = VirtualHost(server);
-            expect(
-                virHost.addHost('my1.host.com').first.then((request) {
-                  request.response.close();
-                }),
-                completion(isNull));
-            expect(
-                virHost.addHost('my2.host.com').first.then((request) {
-                  request.response.close();
-                }),
-                completion(isNull));
-            expect(
-                virHost.addHost('*.host.com').first.then((request) {
-                  request.response.close();
-                }),
-                completion(isNull));
-            return Future.wait([
-              getStatusCode(server.port, '/', host: 'my1.host.com'),
-              getStatusCode(server.port, '/', host: 'my2.host.com'),
-              getStatusCode(server.port, '/', host: 'my3.host.com')
-            ]).whenComplete(server.close);
-          }),
-          completion(equals([HttpStatus.ok, HttpStatus.ok, HttpStatus.ok])));
+    test('empty-host-unhandled', () async {
+      var statusCodes = fetchStatusCode(server.port, '/');
+      var request = await virHost.unhandled.first;
+      await request.response.close();
+      expect(await statusCodes, equals(HttpStatus.ok));
     });
 
-    test('wildcard', () {
-      expect(
-          HttpServer.bind('localhost', 0).then((server) {
-            var virHost = VirtualHost(server);
-            expect(
-                virHost.addHost('*').first.then((request) {
-                  request.response.close();
-                }),
-                completion(isNull));
-            expect(
-                virHost.addHost('*.com').first.then((request) {
-                  request.response.close();
-                }),
-                completion(isNull));
-            expect(
-                virHost.addHost('*.host.com').first.then((request) {
-                  request.response.close();
-                }),
-                completion(isNull));
-            return Future.wait([
-              getStatusCode(server.port, '/', host: 'some.host.dk'),
-              getStatusCode(server.port, '/', host: 'my.host2.com'),
-              getStatusCode(server.port, '/', host: 'long.sub.of.host.com')
-            ]).whenComplete(server.close);
-          }),
-          completion(equals([HttpStatus.ok, HttpStatus.ok, HttpStatus.ok])));
+    test('single-host', () async {
+      var host = virHost.addHost('*.host.com');
+      var statusCode = fetchStatusCode(server.port, '/', host: 'my.host.com');
+      var request = await host.first;
+      await request.response.close();
+      expect(await statusCode, equals(HttpStatus.ok));
+    });
+
+    test('multiple-host', () async {});
+
+    group('domain', () {
+      test('specific-sub-domain', () async {
+        var hosts = [
+          virHost.addHost('my1.host.com'),
+          virHost.addHost('my2.host.com'),
+          virHost.addHost('my3.host.com'),
+        ];
+        var statusCodes = [
+          fetchStatusCode(server.port, '/', host: 'my1.host.com'),
+          fetchStatusCode(server.port, '/', host: 'my2.host.com'),
+          fetchStatusCode(server.port, '/', host: 'my3.host.com'),
+        ];
+        for (var host in hosts) {
+          var request = await host.first;
+          await request.response.close();
+        }
+        expect(await Future.wait(statusCodes),
+            equals([HttpStatus.ok, HttpStatus.ok, HttpStatus.ok]));
+      });
+
+      test('wildcard-sub-domain', () async {
+        var hosts = [
+          virHost.addHost('*.host1.com'),
+          virHost.addHost('*.host2.com'),
+          virHost.addHost('*.host3.com'),
+        ];
+        var statusCodes = [
+          fetchStatusCode(server.port, '/', host: 'my.host1.com'),
+          fetchStatusCode(server.port, '/', host: 'my.host2.com'),
+          fetchStatusCode(server.port, '/', host: 'my.host3.com'),
+        ];
+        for (var host in hosts) {
+          var request = await host.first;
+          await request.response.close();
+        }
+        expect(await Future.wait(statusCodes),
+            equals([HttpStatus.ok, HttpStatus.ok, HttpStatus.ok]));
+      });
+
+      test('mix-sub-domain', () async {
+        var hosts = [
+          virHost.addHost('my1.host.com'),
+          virHost.addHost('my2.host.com'),
+          virHost.addHost('*.host.com'),
+        ];
+        var statusCodes = [
+          fetchStatusCode(server.port, '/', host: 'my1.host.com'),
+          fetchStatusCode(server.port, '/', host: 'my2.host.com'),
+          fetchStatusCode(server.port, '/', host: 'my3.host.com'),
+        ];
+        for (var host in hosts) {
+          var request = await host.first;
+          await request.response.close();
+        }
+        expect(await Future.wait(statusCodes),
+            equals([HttpStatus.ok, HttpStatus.ok, HttpStatus.ok]));
+      });
+
+      test('wildcard', () async {
+        var hosts = [
+          virHost.addHost('*'),
+          virHost.addHost('*.com'),
+          virHost.addHost('*.host.com'),
+        ];
+        var statusCodes = [
+          fetchStatusCode(server.port, '/', host: 'some.host.dk'),
+          fetchStatusCode(server.port, '/', host: 'my.host2.com'),
+          fetchStatusCode(server.port, '/', host: 'long.sub.of.host.com'),
+        ];
+        for (var host in hosts) {
+          var request = await host.first;
+          await request.response.close();
+        }
+        expect(await Future.wait(statusCodes),
+            equals([HttpStatus.ok, HttpStatus.ok, HttpStatus.ok]));
+      });
+    });
+
+    test('multiple-source-https', () async {
+      var secondServer =
+          await HttpServer.bindSecure('localhost', 0, serverContext);
+      virHost.addSource(secondServer);
+      virHost.unhandled.listen((request) {
+        request.response.close();
+      });
+      var statusCodes = await Future.wait([
+        fetchStatusCode(server.port, '/', host: 'myhost1.com'),
+        fetchStatusCode(secondServer.port, '/',
+            host: 'myhost2.com', secure: true)
+      ]);
+      expect(statusCodes, [HttpStatus.ok, HttpStatus.ok]);
+      await secondServer.close();
     });
 
     test('duplicate-domain', () {

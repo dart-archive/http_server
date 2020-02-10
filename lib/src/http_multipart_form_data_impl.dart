@@ -2,8 +2,6 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
-library http_server.http_multipart_form_data_impl;
-
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
@@ -14,8 +12,11 @@ import 'http_multipart_form_data.dart';
 
 class HttpMultipartFormDataImpl extends Stream
     implements HttpMultipartFormData {
+  @override
   final ContentType contentType;
+  @override
   final HeaderValue contentDisposition;
+  @override
   final HeaderValue contentTransferEncoding;
 
   final MimeMultipart _mimeMultipart;
@@ -42,8 +43,8 @@ class HttpMultipartFormDataImpl extends Stream
         !_transparentTransferEncodings
             .contains(contentTransferEncoding.value.toLowerCase())) {
       // TODO(ajohnsen): Support BASE64, etc.
-      throw HttpException("Unsupported contentTransferEncoding: "
-          "${contentTransferEncoding.value}");
+      throw HttpException('Unsupported contentTransferEncoding: '
+          '${contentTransferEncoding.value}');
     }
 
     if (contentType == null ||
@@ -59,7 +60,9 @@ class HttpMultipartFormDataImpl extends Stream
     }
   }
 
+  @override
   bool get isText => _isText;
+  @override
   bool get isBinary => !_isText;
 
   static HttpMultipartFormData parse(
@@ -96,12 +99,14 @@ class HttpMultipartFormDataImpl extends Stream
         type, disposition, encoding, multipart, defaultEncoding);
   }
 
-  StreamSubscription listen(void onData(data),
-      {void onDone(), Function onError, bool cancelOnError}) {
+  @override
+  StreamSubscription listen(void Function(dynamic) onData,
+      {void Function() onDone, Function onError, bool cancelOnError}) {
     return _stream.listen(onData,
         onDone: onDone, onError: onError, cancelOnError: cancelOnError);
   }
 
+  @override
   String value(String name) {
     return _mimeMultipart.headers[name];
   }
