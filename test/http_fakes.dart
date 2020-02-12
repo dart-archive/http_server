@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:collection';
 import 'dart:convert';
 import 'dart:io';
+import 'dart:typed_data';
 
 class FakeHttpHeaders implements HttpHeaders {
   final Map<String, List<String>> _headers = HashMap<String, List<String>>();
@@ -121,7 +122,7 @@ class FakeHttpHeaders implements HttpHeaders {
   }
 }
 
-class FakeHttpRequest implements HttpRequest {
+class FakeHttpRequest extends StreamView<Uint8List> implements HttpRequest {
   @override
   final Uri uri;
   @override
@@ -133,7 +134,10 @@ class FakeHttpRequest implements HttpRequest {
   final bool followRedirects;
 
   FakeHttpRequest(this.uri,
-      {this.followRedirects = true, DateTime ifModifiedSince}) {
+      {this.followRedirects = true,
+      DateTime ifModifiedSince,
+      Stream<Uint8List> data})
+      : super(data) {
     if (ifModifiedSince != null) {
       headers.ifModifiedSince = ifModifiedSince;
     }

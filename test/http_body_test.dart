@@ -2,11 +2,15 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:http_server/http_server.dart';
 import 'package:test/test.dart';
+
+import 'http_fakes.dart';
 
 void _testHttpClientResponseBody() {
   void check(
@@ -287,4 +291,28 @@ File content\r
 void main() {
   test('client response body', _testHttpClientResponseBody);
   test('server request body', _testHttpServerRequestBody);
+
+  test('Does not close stream while requests are pending', () async {
+    var data = StreamController<Uint8List>();
+    var requests = Stream<HttpRequest>.fromIterable(
+        [FakeHttpRequest(Uri(), data: data.stream)]);
+    var isDone = false;
+    requests
+        .transform(HttpBodyHandler())
+        .listen((_) {}, onDone: () => isDone = true);
+    await pumpEventQueue();
+    expect(isDone, isFalse);
+    await data.close();
+    expect(isDone, isTrue);
+  });
+
+  test('Closes stream while no requests are pending', () async {
+    var requests = Stream<HttpRequest>.empty();
+    var isDone = false;
+    requests
+        .transform(HttpBodyHandler())
+        .listen((_) {}, onDone: () => isDone = true);
+    await pumpEventQueue();
+    expect(isDone, isTrue);
+  });
 }
