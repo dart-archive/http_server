@@ -133,6 +133,19 @@ Content of file\r
     ]);
   });
 
+  test('With content transfer encoding', () async {
+    var message = '''
+\r\n--AaB03x\r
+Content-Disposition: form-data; name="submit-name"\r
+Content-Transfer-Encoding: 8bit\r
+\r
+Larry\r
+--AaB03x--\r\n''';
+
+    await _postDataTest(message.codeUnits, 'multipart/form-data', 'AaB03x',
+        [FormField('submit-name', 'Larry')]);
+  });
+
   test('Windows/IE style file upload', () async {
     var message = '''
 \r\n--AaB03x\r
