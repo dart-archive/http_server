@@ -14,9 +14,6 @@ class _DirectoryRedirect {
   const _DirectoryRedirect();
 }
 
-typedef _DirCallback = dynamic Function(Directory dir, HttpRequest request);
-typedef _ErrorCallback = dynamic Function(HttpRequest request);
-
 /// A [VirtualDirectory] can serve files and directory-listing from a root path,
 /// to [HttpRequest]s.
 ///
@@ -43,8 +40,8 @@ class VirtualDirectory {
 
   final RegExp _invalidPathRegExp = RegExp('[\\\/\x00]');
 
-  _ErrorCallback _errorCallback;
-  _DirCallback _dirCallback;
+  void Function(HttpRequest) _errorCallback;
+  void Function(Directory, HttpRequest) _dirCallback;
 
   static List<String> _parsePathPrefix(String pathPrefix) {
     if (pathPrefix == null) return <String>[];
