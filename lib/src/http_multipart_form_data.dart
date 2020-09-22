@@ -44,13 +44,11 @@ class HttpMultipartFormData extends Stream {
   /// if not present.
   final HeaderValue contentTransferEncoding;
 
-  var _isText = false;
-
   /// Whether the data is decoded as [String].
-  bool get isText => _isText;
+  final bool isText;
 
   /// Whether the data is raw bytes.
-  bool get isBinary => !_isText;
+  bool get isBinary => !isText;
 
   /// The values which indicate that no incoding was performed.
   ///
@@ -69,14 +67,13 @@ class HttpMultipartFormData extends Stream {
   /// constraints.html#multipart-form-data).
   static HttpMultipartFormData parse(MimeMultipart multipart,
       {Encoding defaultEncoding = utf8}) {
-    ContentType type;
+    ContentType contentType;
     HeaderValue encoding;
     HeaderValue disposition;
-    var remaining = <String, String>{};
     for (var key in multipart.headers.keys) {
       switch (key) {
         case 'content-type':
-          type = ContentType.parse(multipart.headers[key]);
+          contentType = ContentType.parse(multipart.headers[key]);
           break;
 
         case 'content-transfer-encoding':
@@ -89,7 +86,6 @@ class HttpMultipartFormData extends Stream {
           break;
 
         default:
-          remaining[key] = multipart.headers[key];
           break;
       }
     }
@@ -97,41 +93,40 @@ class HttpMultipartFormData extends Stream {
       throw const HttpException(
           "Mime Multipart doesn't contain a Content-Disposition header value");
     }
+    if (encoding != null &&
+        !_transparentEncodings.contains(encoding.value.toLowerCase())) {
+      // TODO(ajohnsen): Support BASE64, etc.
+      throw HttpException('Unsupported contentTransferEncoding: '
+          '${encoding.value}');
+    }
+
+    Stream stream = multipart;
+    var isText = contentType == null ||
+        contentType.primaryType == 'text' ||
+        contentType.mimeType == 'application/json';
+    if (isText) {
+      Encoding encoding;
+      if (contentType?.charset != null) {
+        encoding = Encoding.getByName(contentType.charset);
+      }
+      encoding ??= defaultEncoding;
+      stream = stream.transform(encoding.decoder);
+    }
     return HttpMultipartFormData._(
-        type, disposition, encoding, multipart, defaultEncoding);
+        contentType, disposition, encoding, multipart, stream, isText);
   }
 
   final MimeMultipart _mimeMultipart;
 
-  Stream _stream;
+  final Stream _stream;
 
   HttpMultipartFormData._(
       this.contentType,
       this.contentDisposition,
       this.contentTransferEncoding,
       this._mimeMultipart,
-      Encoding defaultEncoding) {
-    _stream = _mimeMultipart;
-    if (contentTransferEncoding != null &&
-        !_transparentEncodings
-            .contains(contentTransferEncoding.value.toLowerCase())) {
-      // TODO(ajohnsen): Support BASE64, etc.
-      throw HttpException('Unsupported contentTransferEncoding: '
-          '${contentTransferEncoding.value}');
-    }
-
-    if (contentType == null ||
-        contentType.primaryType == 'text' ||
-        contentType.mimeType == 'application/json') {
-      _isText = true;
-      Encoding encoding;
-      if (contentType != null && contentType.charset != null) {
-        encoding = Encoding.getByName(contentType.charset);
-      }
-      encoding ??= defaultEncoding;
-      _stream = _stream.transform(encoding.decoder);
-    }
-  }
+      this._stream,
+      this.isText);
 
   @override
   StreamSubscription listen(void Function(dynamic) onData,
