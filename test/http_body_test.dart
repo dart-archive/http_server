@@ -64,7 +64,7 @@ void _testHttpClientResponseBody() {
 
 void _testHttpServerRequestBody() {
   void check(
-      String mimeType, List<int> content, dynamic expectedBody, String type,
+      String? mimeType, List<int> content, dynamic expectedBody, String type,
       {bool shouldFail = false, Encoding defaultEncoding = utf8}) async {
     var server = await HttpServer.bind('localhost', 0);
     server.transform(HttpBodyHandler(defaultEncoding: defaultEncoding)).listen(
@@ -75,12 +75,12 @@ void _testHttpServerRequestBody() {
       switch (type) {
         case 'text':
           expect(
-              body.request.headers.contentType.mimeType, equals('text/plain'));
+              body.request.headers.contentType!.mimeType, equals('text/plain'));
           expect(body.body, equals(expectedBody));
           break;
 
         case 'json':
-          expect(body.request.headers.contentType.mimeType,
+          expect(body.request.headers.contentType!.mimeType,
               equals('application/json'));
           expect(body.body, equals(expectedBody));
           break;
@@ -91,7 +91,7 @@ void _testHttpServerRequestBody() {
           break;
 
         case 'form':
-          var mimeType = body.request.headers.contentType.mimeType;
+          var mimeType = body.request.headers.contentType!.mimeType;
           expect(
               mimeType,
               anyOf(equals('multipart/form-data'),
@@ -116,7 +116,7 @@ void _testHttpServerRequestBody() {
       }
       body.request.response.close();
     }, onError: (error) {
-      if (!shouldFail) throw error;
+      if (!shouldFail) throw error as Object;
     });
 
     var client = HttpClient();

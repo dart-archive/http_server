@@ -393,7 +393,7 @@ void main() {
         var headers = await fetchHEaders(virDir, '/file');
         expect(headers.value(HttpHeaders.lastModifiedHeader), isNotNull);
         var lastModified =
-            HttpDate.parse(headers.value(HttpHeaders.lastModifiedHeader));
+            HttpDate.parse(headers.value(HttpHeaders.lastModifiedHeader)!);
 
         var result = await statusCodeForVirtDir(virDir, '/file',
             ifModifiedSince: lastModified);
@@ -407,7 +407,7 @@ void main() {
         var headers = await fetchHEaders(virDir, '/file');
         expect(headers.value(HttpHeaders.lastModifiedHeader), isNotNull);
         var lastModified =
-            HttpDate.parse(headers.value(HttpHeaders.lastModifiedHeader));
+            HttpDate.parse(headers.value(HttpHeaders.lastModifiedHeader)!);
 
         // Fake file changed by moving date back in time.
         lastModified = lastModified.subtract(const Duration(seconds: 10));
@@ -444,7 +444,7 @@ void main() {
 
   group('range', () {
     var fileContent = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
-    VirtualDirectory virDir;
+    VirtualDirectory? virDir;
 
     void prepare(Directory dir) {
       File('${dir.path}/file').writeAsBytesSync(fileContent);
@@ -454,7 +454,7 @@ void main() {
     testVirtualDir('range', (dir) async {
       prepare(dir);
       Future<void> check(int from, int to,
-          [List<int> expected, String contentRange]) async {
+          [List<int>? expected, String? contentRange]) async {
         expected ??= fileContent.sublist(from, to + 1);
         contentRange ??= 'bytes $from-$to/${fileContent.length}';
         var result =
@@ -483,8 +483,8 @@ void main() {
     testVirtualDir('prefix-range', (dir) async {
       prepare(dir);
       Future<void> check(int from,
-          [List<int> expected,
-          String contentRange,
+          [List<int>? expected,
+          String? contentRange,
           bool expectContentRange = true,
           int expectedStatusCode = HttpStatus.partialContent]) async {
         expected ??= fileContent.sublist(from, fileContent.length);
@@ -517,7 +517,7 @@ void main() {
     testVirtualDir('suffix-range', (dir) async {
       prepare(dir);
       Future<void> check(int to,
-          [List<int> expected, String contentRange]) async {
+          [List<int>? expected, String? contentRange]) async {
         expected ??=
             fileContent.sublist(fileContent.length - to, fileContent.length);
         contentRange ??= 'bytes ${fileContent.length - to}-'
@@ -559,7 +559,7 @@ void main() {
 
     testVirtualDir('invalid-range', (dir) async {
       prepare(dir);
-      Future<void> check(int from, int to) async {
+      Future<void> check(int? from, int to) async {
         var result =
             await fetchContentAndResponse(virDir, '/file', from: from, to: to);
         var content = result[0];
