@@ -206,7 +206,7 @@ class HttpBodyFileUpload {
   /// The [ContentType] of the uploaded file.
   ///
   /// For `text/*` and `application/json` the [content] field will a String.
-  final ContentType contentType;
+  final ContentType? contentType;
 
   /// The content of the file.
   ///
@@ -222,24 +222,24 @@ Future<HttpBody> _process(Stream<List<int>> stream, HttpHeaders headers,
 
   Future<HttpBody> asBinary() async {
     var builder = await stream.fold(
-        BytesBuilder(), (builder, data) => builder..add(data));
+        BytesBuilder(), (dynamic builder, data) => builder..add(data));
     return HttpBody._('binary', builder.takeBytes());
   }
 
   Future<HttpBody> asText(Encoding defaultEncoding) async {
-    Encoding encoding;
-    var charset = contentType.charset;
+    Encoding? encoding;
+    var charset = contentType!.charset;
     if (charset != null) encoding = Encoding.getByName(charset);
     encoding ??= defaultEncoding;
     var buffer = await encoding.decoder
         .bind(stream)
-        .fold(StringBuffer(), (buffer, data) => buffer..write(data));
+        .fold(StringBuffer(), (dynamic buffer, data) => buffer..write(data));
     return HttpBody._('text', buffer.toString());
   }
 
   Future<HttpBody> asFormData() async {
     var values = await MimeMultipartTransformer(
-            contentType.parameters['boundary'])
+            contentType!.parameters['boundary']!)
         .bind(stream)
         .map((part) =>
             HttpMultipartFormData.parse(part, defaultEncoding: defaultEncoding))
