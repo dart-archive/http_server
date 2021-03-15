@@ -42,7 +42,7 @@ void main() {
   group('serve-file', () {
     group('top-level', () {
       testVirtualDir('file-exists', (dir) async {
-        File('${dir.path}/file')..createSync();
+        File('${dir.path}/file').createSync();
         var virDir = VirtualDirectory(dir.path);
         var result = await statusCodeForVirtDir(virDir, '/file');
         expect(result, HttpStatus.ok);
@@ -59,15 +59,15 @@ void main() {
     group('in-dir', () {
       testVirtualDir('file-exists', (dir) async {
         var dir2 = Directory('${dir.path}/dir')..createSync();
-        File('${dir2.path}/file')..createSync();
+        File('${dir2.path}/file').createSync();
         var virDir = VirtualDirectory(dir.path);
         var result = await statusCodeForVirtDir(virDir, '/dir/file');
         expect(result, HttpStatus.ok);
       });
 
       testVirtualDir('file-not-exists', (dir) async {
-        Directory('${dir.path}/dir')..createSync();
-        File('${dir.path}/file')..createSync();
+        Directory('${dir.path}/dir').createSync();
+        File('${dir.path}/file').createSync();
         var virDir = VirtualDirectory(dir.path);
 
         var result = await statusCodeForVirtDir(virDir, '/dir/file');
@@ -146,7 +146,7 @@ void main() {
 
       if (!Platform.isWindows) {
         testVirtualDir('recursive-link', (dir) async {
-          Link('${dir.path}/recursive')..createSync('.');
+          Link('${dir.path}/recursive').createSync('.');
           var virDir = VirtualDirectory(dir.path);
           virDir.allowDirectoryListing = true;
 
@@ -299,8 +299,8 @@ void main() {
       group('follow-links', () {
         testVirtualDir('dir-link', (dir) async {
           var dir2 = Directory('${dir.path}/dir2')..createSync();
-          Link('${dir.path}/dir3')..createSync('dir2');
-          File('${dir2.path}/file')..createSync();
+          Link('${dir.path}/dir3').createSync('dir2');
+          File('${dir2.path}/file').createSync();
           var virDir = VirtualDirectory(dir.path);
           virDir.followLinks = true;
 
@@ -309,8 +309,8 @@ void main() {
         });
 
         testVirtualDir('root-link', (dir) async {
-          Link('${dir.path}/dir3')..createSync('.');
-          File('${dir.path}/file')..createSync();
+          Link('${dir.path}/dir3').createSync('.');
+          File('${dir.path}/file').createSync();
           var virDir = VirtualDirectory(dir.path);
           virDir.followLinks = true;
 
@@ -320,8 +320,8 @@ void main() {
 
         group('bad-links', () {
           testVirtualDir('absolute-link', (dir) async {
-            File('${dir.path}/file')..createSync();
-            Link('${dir.path}/file2')..createSync('${dir.path}/file');
+            File('${dir.path}/file').createSync();
+            Link('${dir.path}/file2').createSync('${dir.path}/file');
             var virDir = VirtualDirectory(dir.path);
             virDir.followLinks = true;
 
@@ -331,8 +331,8 @@ void main() {
 
           testVirtualDir('relative-parent-link', (dir) async {
             var dir2 = Directory('${dir.path}/dir')..createSync();
-            File('${dir.path}/file')..createSync();
-            Link('${dir2.path}/file')..createSync('../file');
+            File('${dir.path}/file').createSync();
+            Link('${dir2.path}/file').createSync('../file');
             var virDir = VirtualDirectory(dir2.path);
             virDir.followLinks = true;
 
@@ -345,8 +345,8 @@ void main() {
       group('not-follow-links', () {
         testVirtualDir('dir-link', (dir) async {
           var dir2 = Directory('${dir.path}/dir2')..createSync();
-          Link('${dir.path}/dir3')..createSync('dir2');
-          File('${dir2.path}/file')..createSync();
+          Link('${dir.path}/dir3').createSync('dir2');
+          File('${dir2.path}/file').createSync();
           var virDir = VirtualDirectory(dir.path);
           virDir.followLinks = false;
 
@@ -358,8 +358,8 @@ void main() {
       group('follow-links', () {
         group('no-root-jail', () {
           testVirtualDir('absolute-link', (dir) async {
-            File('${dir.path}/file')..createSync();
-            Link('${dir.path}/file2')..createSync('${dir.path}/file');
+            File('${dir.path}/file').createSync();
+            Link('${dir.path}/file2').createSync('${dir.path}/file');
             var virDir = VirtualDirectory(dir.path);
             virDir.followLinks = true;
             virDir.jailRoot = false;
@@ -370,8 +370,8 @@ void main() {
 
           testVirtualDir('relative-parent-link', (dir) async {
             var dir2 = Directory('${dir.path}/dir')..createSync();
-            File('${dir.path}/file')..createSync();
-            Link('${dir2.path}/file')..createSync('../file');
+            File('${dir.path}/file').createSync();
+            Link('${dir2.path}/file').createSync('../file');
             var virDir = VirtualDirectory(dir2.path);
             virDir.followLinks = true;
             virDir.jailRoot = false;
@@ -387,7 +387,7 @@ void main() {
   group('last-modified', () {
     group('file', () {
       testVirtualDir('file-exists', (dir) async {
-        File('${dir.path}/file')..createSync();
+        File('${dir.path}/file').createSync();
         var virDir = VirtualDirectory(dir.path);
 
         var headers = await fetchHEaders(virDir, '/file');
@@ -401,7 +401,7 @@ void main() {
       });
 
       testVirtualDir('file-changes', (dir) async {
-        File('${dir.path}/file')..createSync();
+        File('${dir.path}/file').createSync();
         var virDir = VirtualDirectory(dir.path);
 
         var headers = await fetchHEaders(virDir, '/file');
@@ -422,7 +422,7 @@ void main() {
   group('content-type', () {
     group('mime-type', () {
       testVirtualDir('from-path', (dir) async {
-        File('${dir.path}/file.jpg')..createSync();
+        File('${dir.path}/file.jpg').createSync();
         var virDir = VirtualDirectory(dir.path);
 
         var headers = await fetchHEaders(virDir, '/file.jpg');
@@ -621,7 +621,7 @@ void main() {
 
   group('url-decode', () {
     testVirtualDir('with-space', (dir) async {
-      File('${dir.path}/my file')..createSync();
+      File('${dir.path}/my file').createSync();
       var virDir = VirtualDirectory(dir.path);
 
       var result = await statusCodeForVirtDir(virDir, '/my file');
@@ -629,7 +629,7 @@ void main() {
     });
 
     testVirtualDir('encoded-space', (dir) async {
-      File('${dir.path}/my file')..createSync();
+      File('${dir.path}/my file').createSync();
       var virDir = VirtualDirectory(dir.path);
 
       var result = await statusCodeForVirtDir(virDir, '/my%20file');
@@ -671,7 +671,7 @@ void main() {
 
   group('serve-file', () {
     testVirtualDir('from-dir-handler', (dir) async {
-      File('${dir.path}/file')..writeAsStringSync('file contents');
+      File('${dir.path}/file').writeAsStringSync('file contents');
       var virDir = VirtualDirectory(dir.path);
       virDir.allowDirectoryListing = true;
       virDir.directoryHandler = (d, request) {
