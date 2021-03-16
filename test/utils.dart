@@ -271,7 +271,7 @@ Future<List> _fetchContentAndResponse(
     var request = await client.get('localhost', port, path);
     _addRangeHeader(request, from, to);
     var response = await request.close();
-    var bytes = await response.fold([], (dynamic p, e) => p..addAll(e));
+    var bytes = await response.fold<List<int>>([], (p, e) => p..addAll(e));
     return [bytes, response];
   } finally {
     client.close();
