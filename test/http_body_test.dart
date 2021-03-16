@@ -115,7 +115,7 @@ void _testHttpServerRequestBody() {
           throw StateError('bad body type');
       }
       body.request.response.close();
-    }, onError: (error) {
+    }, onError: (Object error) {
       // ignore: only_throw_errors
       if (!shouldFail) throw error as Object;
     });
