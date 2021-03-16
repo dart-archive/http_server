@@ -119,7 +119,7 @@ class VirtualDirectory {
     _errorCallback = callback;
   }
 
-  Future<dynamic?> _locateResource(
+  Future<Object?> _locateResource(
       String path, HasNextIterator<String> segments) async {
     // Don't allow navigating up paths.
     if (segments.hasNext && segments.current == '..') return Future.value(null);
