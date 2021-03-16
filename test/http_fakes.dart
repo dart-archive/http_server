@@ -158,7 +158,7 @@ class FakeHttpResponse implements HttpResponse {
   final Completer _completer = Completer();
   final List<int> _buffer = <int>[];
   String? _reasonPhrase;
-  late Future _doneFuture;
+  late final Future _doneFuture;
 
   FakeHttpResponse() {
     _doneFuture = _completer.future.whenComplete(() {
