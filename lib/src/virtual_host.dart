@@ -73,10 +73,10 @@ class _VirtualHost implements VirtualHost {
         return;
       }
       var domains = host.split('.');
-      _VirtualHostDomain? current = _topDomain;
+      var current = _topDomain;
       StreamController? any;
       for (var i = domains.length - 1; i >= 0; i--) {
-        if (current!.any != null) any = current.any;
+        if (current.any != null) any = current.any;
         if (i == 0) {
           var last = current.subDomains[domains[i]];
           if (last != null && last.exact != null) {
@@ -87,7 +87,7 @@ class _VirtualHost implements VirtualHost {
           if (!current.subDomains.containsKey(domains[i])) {
             break;
           }
-          current = current.subDomains[domains[i]];
+          current = current.subDomains[domains[i]]!;
         }
       }
       if (any != null) {
@@ -106,19 +106,19 @@ class _VirtualHost implements VirtualHost {
     }
     var controller = StreamController<HttpRequest>();
     var domains = host.split('.');
-    _VirtualHostDomain? current = _topDomain;
+    var current = _topDomain;
     for (var i = domains.length - 1; i >= 0; i--) {
       if (domains[i] == '*') {
-        if (current!.any != null) {
+        if (current.any != null) {
           throw ArgumentError('Host is already provided');
         }
         current.any = controller;
       } else {
-        if (!current!.subDomains.containsKey(domains[i])) {
+        if (!current.subDomains.containsKey(domains[i])) {
           current.subDomains[domains[i]] = _VirtualHostDomain();
         }
         if (i > 0) {
-          current = current.subDomains[domains[i]];
+          current = current.subDomains[domains[i]]!;
         } else {
           if (current.subDomains[domains[i]]!.exact != null) {
             throw ArgumentError('Host is already provided');
