@@ -218,17 +218,21 @@ class HttpBodyFileUpload {
 
 Future<HttpBody> _process(Stream<List<int>> stream, HttpHeaders headers,
     Encoding defaultEncoding) async {
-  var contentType = headers.contentType;
-
   Future<HttpBody> asBinary() async {
     var builder = await stream.fold<BytesBuilder>(
         BytesBuilder(), (builder, data) => builder..add(data));
     return HttpBody._('binary', builder.takeBytes());
   }
 
+  if (headers.contentType == null) {
+    return asBinary();
+  }
+
+  var contentType = headers.contentType!;
+
   Future<HttpBody> asText(Encoding defaultEncoding) async {
     Encoding? encoding;
-    var charset = contentType!.charset;
+    var charset = contentType.charset;
     if (charset != null) encoding = Encoding.getByName(charset);
     encoding ??= defaultEncoding;
     var buffer = await encoding.decoder
@@ -239,7 +243,7 @@ Future<HttpBody> _process(Stream<List<int>> stream, HttpHeaders headers,
 
   Future<HttpBody> asFormData() async {
     var values = await MimeMultipartTransformer(
-            contentType!.parameters['boundary']!)
+            contentType.parameters['boundary']!)
         .bind(stream)
         .map((part) =>
             HttpMultipartFormData.parse(part, defaultEncoding: defaultEncoding))
@@ -266,10 +270,6 @@ Future<HttpBody> _process(Stream<List<int>> stream, HttpHeaders headers,
       map[part[0] as String] = part[1]; // Override existing entries.
     }
     return HttpBody._('form', map);
-  }
-
-  if (contentType == null) {
-    return asBinary();
   }
 
   switch (contentType.primaryType) {
