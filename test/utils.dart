@@ -173,7 +173,7 @@ Future<List<int>> fetchAsBytes(VirtualDirectory virtualDir, String path,
       virtualDir, (int port) => _fetchAsBytes(port, path, from, to));
 }
 
-Future<List> fetchContentAndResponse(VirtualDirectory? virtualDir, String path,
+Future<List> fetchContentAndResponse(VirtualDirectory virtualDir, String path,
     {int? from, int? to}) async {
   // if this is a fake test, then run the fake code path
   if (_isFakeTestExpando[currentTestCase]!) {
@@ -183,14 +183,14 @@ Future<List> fetchContentAndResponse(VirtualDirectory? virtualDir, String path,
         FakeHttpRequest(uri, data: StreamController<Uint8List>().stream);
     _addRangeHeader(request, from, to);
 
-    var response = await _withFakeRequest(virtualDir!, request);
+    var response = await _withFakeRequest(virtualDir, request);
     return [response.fakeContentBinary, response];
   }
 
   assert(_isFakeTestExpando[currentTestCase] == false);
 
-  return _withServer(virtualDir!,
-      (int port) => _fetchContentAndResponse(port, path, from, to));
+  return _withServer(
+      virtualDir, (int port) => _fetchContentAndResponse(port, path, from, to));
 }
 
 Future<FakeHttpResponse> _withFakeRequest(

@@ -444,7 +444,7 @@ void main() {
 
   group('range', () {
     var fileContent = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
-    VirtualDirectory? virDir;
+    late VirtualDirectory virDir;
 
     void prepare(Directory dir) {
       File('${dir.path}/file').writeAsBytesSync(fileContent);
