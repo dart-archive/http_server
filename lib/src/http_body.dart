@@ -221,8 +221,8 @@ Future<HttpBody> _process(Stream<List<int>> stream, HttpHeaders headers,
   var contentType = headers.contentType;
 
   Future<HttpBody> asBinary() async {
-    var builder = await stream.fold(
-        BytesBuilder(), (dynamic builder, data) => builder..add(data));
+    var builder = await stream.fold<BytesBuilder>(
+        BytesBuilder(), (builder, data) => builder..add(data));
     return HttpBody._('binary', builder.takeBytes());
   }
 
