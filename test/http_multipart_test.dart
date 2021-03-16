@@ -76,7 +76,8 @@ Future _postDataTest(List<int> message, String contentType, String boundary,
       if (multipart.isText) {
         data = await multipart.join();
       } else {
-        data = await multipart.fold([], (dynamic b, s) => b..addAll(s));
+        data = await multipart
+            .fold<List<int>>([], (b, s) => b..addAll(s as List<int>));
       }
       String? contentType;
       if (multipart.contentType != null) {
