@@ -117,7 +117,7 @@ void _testHttpServerRequestBody() {
       body.request.response.close();
     }, onError: (Object error) {
       // ignore: only_throw_errors
-      if (!shouldFail) throw error as Object;
+      if (!shouldFail) throw error;
     });
 
     var client = HttpClient();
