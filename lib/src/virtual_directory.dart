@@ -6,7 +6,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:http_server/src/nullable_iterator.dart';
+import 'package:http_server/src/has_next_iterator.dart';
 import 'package:mime/mime.dart';
 import 'package:path/path.dart';
 
@@ -72,14 +72,18 @@ class VirtualDirectory {
 
   /// Serve a single [HttpRequest], in this [VirtualDirectory].
   Future serveRequest(HttpRequest request) async {
-    var iterator = request.uri.pathSegments.nullableIterator;
+    var iterator = request.uri.pathSegments.hasNextIterator;
     for (var segment in _pathPrefixSegments) {
       if (!iterator.moveNext() || iterator.current != segment) {
         _serveErrorPage(HttpStatus.notFound, request);
         return request.response.done;
       }
     }
-    var entity = await _locateResource('.', iterator..moveNext());
+    if (iterator.hasNext) {
+      // Only move to our first item if we actually have one to move to.
+      iterator.moveNext();
+    }
+    var entity = await _locateResource('.', iterator);
     if (entity is File) {
       serveFile(entity, request);
     } else if (entity is Directory) {
@@ -116,9 +120,9 @@ class VirtualDirectory {
   }
 
   Future<dynamic?> _locateResource(
-      String path, NullableIterator<String> segments) async {
+      String path, HasNextIterator<String> segments) async {
     // Don't allow navigating up paths.
-    if (segments.current == '..') return Future.value(null);
+    if (segments.hasNext && segments.current == '..') return Future.value(null);
     path = normalize(path);
     // If we jail to root, the relative path can never go up.
     if (jailRoot && split(path).first == '..') return Future.value(null);
@@ -126,18 +130,18 @@ class VirtualDirectory {
     var type = await FileSystemEntity.type(fullPath(), followLinks: false);
     switch (type) {
       case FileSystemEntityType.file:
-        if (segments.current == null) {
+        if (!segments.hasNext) {
           return File(fullPath());
         }
         break;
 
       case FileSystemEntityType.directory:
         String dirFullPath() => '${fullPath()}$separator';
-        var current = segments.current;
-        if (current == null) {
+        if (!segments.hasNext) {
           if (path == '.') return Directory(dirFullPath());
           return const _DirectoryRedirect();
         }
+        var current = segments.current;
         var hasNext = segments.moveNext();
         if (!hasNext && current == '') {
           return Directory(dirFullPath());
