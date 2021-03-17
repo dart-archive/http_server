@@ -84,11 +84,12 @@ class VirtualDirectory {
           return request.response.done;
         }
       }
+      if (iterator.hasNext) {
+        // Only move to our first item if we actually have one to move to.
+        iterator.moveNext();
+      }
     }
-    if (iterator.hasNext) {
-      // Only move to our first item if we actually have one to move to.
-      iterator.moveNext();
-    }
+
     var entity = await _locateResource('.', iterator);
     if (entity is File) {
       serveFile(entity, request);
