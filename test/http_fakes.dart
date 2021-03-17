@@ -30,11 +30,9 @@ class FakeHttpHeaders implements HttpHeaders {
   @override
   set ifModifiedSince(DateTime? ifModifiedSince) {
     ArgumentError.checkNotNull(ifModifiedSince);
-    if (ifModifiedSince != null) {
-      // Format "ifModifiedSince" header with date in Greenwich Mean Time (GMT).
-      var formatted = HttpDate.format(ifModifiedSince.toUtc());
-      _set(HttpHeaders.ifModifiedSinceHeader, formatted);
-    }
+    // Format "ifModifiedSince" header with date in Greenwich Mean Time (GMT).
+    var formatted = HttpDate.format(ifModifiedSince!.toUtc());
+    _set(HttpHeaders.ifModifiedSinceHeader, formatted);
   }
 
   @override
