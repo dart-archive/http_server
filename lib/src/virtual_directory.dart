@@ -72,11 +72,17 @@ class VirtualDirectory {
 
   /// Serve a single [HttpRequest], in this [VirtualDirectory].
   Future serveRequest(HttpRequest request) async {
-    var iterator = request.uri.pathSegments.hasNextIterator;
-    for (var segment in _pathPrefixSegments) {
-      if (!iterator.moveNext() || iterator.current != segment) {
-        _serveErrorPage(HttpStatus.notFound, request);
-        return request.response.done;
+    var iterator = HasNextIterator(request.uri.pathSegments.iterator);
+    if (_pathPrefixSegments.isEmpty) {
+      // Ensures we call this at least one time before doing any `hasNext`
+      // checks.
+      iterator.moveNext();
+    } else {
+      for (var segment in _pathPrefixSegments) {
+        if (!iterator.moveNext() || iterator.current != segment) {
+          _serveErrorPage(HttpStatus.notFound, request);
+          return request.response.done;
+        }
       }
     }
     if (iterator.hasNext) {
