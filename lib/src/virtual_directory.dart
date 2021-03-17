@@ -6,7 +6,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:http_server/src/has_next_iterator.dart';
+import 'package:http_server/src/has_current_iterator.dart';
 import 'package:mime/mime.dart';
 import 'package:path/path.dart';
 
@@ -72,22 +72,14 @@ class VirtualDirectory {
 
   /// Serve a single [HttpRequest], in this [VirtualDirectory].
   Future serveRequest(HttpRequest request) async {
-    var iterator = HasNextIterator(request.uri.pathSegments.iterator);
-    if (_pathPrefixSegments.isEmpty) {
-      // Ensures we call this at least one time before doing any `hasNext`
-      // checks.
+    var iterator = HasCurrentIterator(request.uri.pathSegments.iterator);
+    iterator.moveNext();
+    for (var segment in _pathPrefixSegments) {
+      if (!iterator.hasCurrent || iterator.current != segment) {
+        _serveErrorPage(HttpStatus.notFound, request);
+        return request.response.done;
+      }
       iterator.moveNext();
-    } else {
-      for (var segment in _pathPrefixSegments) {
-        if (!iterator.moveNext() || iterator.current != segment) {
-          _serveErrorPage(HttpStatus.notFound, request);
-          return request.response.done;
-        }
-      }
-      if (iterator.hasNext) {
-        // Only move to our first item if we actually have one to move to.
-        iterator.moveNext();
-      }
     }
 
     var entity = await _locateResource('.', iterator);
@@ -127,9 +119,11 @@ class VirtualDirectory {
   }
 
   Future<Object?> _locateResource(
-      String path, HasNextIterator<String> segments) async {
+      String path, HasCurrentIterator<String> segments) async {
     // Don't allow navigating up paths.
-    if (segments.hasNext && segments.current == '..') return Future.value(null);
+    if (segments.hasCurrent && segments.current == '..') {
+      return Future.value(null);
+    }
     path = normalize(path);
     // If we jail to root, the relative path can never go up.
     if (jailRoot && split(path).first == '..') return Future.value(null);
@@ -137,14 +131,14 @@ class VirtualDirectory {
     var type = await FileSystemEntity.type(fullPath(), followLinks: false);
     switch (type) {
       case FileSystemEntityType.file:
-        if (!segments.hasNext) {
+        if (!segments.hasCurrent) {
           return File(fullPath());
         }
         break;
 
       case FileSystemEntityType.directory:
         String dirFullPath() => '${fullPath()}$separator';
-        if (!segments.hasNext) {
+        if (!segments.hasCurrent) {
           if (path == '.') return Directory(dirFullPath());
           return const _DirectoryRedirect();
         }
