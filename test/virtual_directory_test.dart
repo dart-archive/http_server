@@ -42,7 +42,7 @@ void main() {
   group('serve-file', () {
     group('top-level', () {
       testVirtualDir('file-exists', (dir) async {
-        File('${dir.path}/file')..createSync();
+        File('${dir.path}/file').createSync();
         var virDir = VirtualDirectory(dir.path);
         var result = await statusCodeForVirtDir(virDir, '/file');
         expect(result, HttpStatus.ok);
@@ -59,15 +59,15 @@ void main() {
     group('in-dir', () {
       testVirtualDir('file-exists', (dir) async {
         var dir2 = Directory('${dir.path}/dir')..createSync();
-        File('${dir2.path}/file')..createSync();
+        File('${dir2.path}/file').createSync();
         var virDir = VirtualDirectory(dir.path);
         var result = await statusCodeForVirtDir(virDir, '/dir/file');
         expect(result, HttpStatus.ok);
       });
 
       testVirtualDir('file-not-exists', (dir) async {
-        Directory('${dir.path}/dir')..createSync();
-        File('${dir.path}/file')..createSync();
+        Directory('${dir.path}/dir').createSync();
+        File('${dir.path}/file').createSync();
         var virDir = VirtualDirectory(dir.path);
 
         var result = await statusCodeForVirtDir(virDir, '/dir/file');
@@ -146,7 +146,7 @@ void main() {
 
       if (!Platform.isWindows) {
         testVirtualDir('recursive-link', (dir) async {
-          Link('${dir.path}/recursive')..createSync('.');
+          Link('${dir.path}/recursive').createSync('.');
           var virDir = VirtualDirectory(dir.path);
           virDir.allowDirectoryListing = true;
 
@@ -299,8 +299,8 @@ void main() {
       group('follow-links', () {
         testVirtualDir('dir-link', (dir) async {
           var dir2 = Directory('${dir.path}/dir2')..createSync();
-          Link('${dir.path}/dir3')..createSync('dir2');
-          File('${dir2.path}/file')..createSync();
+          Link('${dir.path}/dir3').createSync('dir2');
+          File('${dir2.path}/file').createSync();
           var virDir = VirtualDirectory(dir.path);
           virDir.followLinks = true;
 
@@ -309,8 +309,8 @@ void main() {
         });
 
         testVirtualDir('root-link', (dir) async {
-          Link('${dir.path}/dir3')..createSync('.');
-          File('${dir.path}/file')..createSync();
+          Link('${dir.path}/dir3').createSync('.');
+          File('${dir.path}/file').createSync();
           var virDir = VirtualDirectory(dir.path);
           virDir.followLinks = true;
 
@@ -320,8 +320,8 @@ void main() {
 
         group('bad-links', () {
           testVirtualDir('absolute-link', (dir) async {
-            File('${dir.path}/file')..createSync();
-            Link('${dir.path}/file2')..createSync('${dir.path}/file');
+            File('${dir.path}/file').createSync();
+            Link('${dir.path}/file2').createSync('${dir.path}/file');
             var virDir = VirtualDirectory(dir.path);
             virDir.followLinks = true;
 
@@ -331,8 +331,8 @@ void main() {
 
           testVirtualDir('relative-parent-link', (dir) async {
             var dir2 = Directory('${dir.path}/dir')..createSync();
-            File('${dir.path}/file')..createSync();
-            Link('${dir2.path}/file')..createSync('../file');
+            File('${dir.path}/file').createSync();
+            Link('${dir2.path}/file').createSync('../file');
             var virDir = VirtualDirectory(dir2.path);
             virDir.followLinks = true;
 
@@ -345,8 +345,8 @@ void main() {
       group('not-follow-links', () {
         testVirtualDir('dir-link', (dir) async {
           var dir2 = Directory('${dir.path}/dir2')..createSync();
-          Link('${dir.path}/dir3')..createSync('dir2');
-          File('${dir2.path}/file')..createSync();
+          Link('${dir.path}/dir3').createSync('dir2');
+          File('${dir2.path}/file').createSync();
           var virDir = VirtualDirectory(dir.path);
           virDir.followLinks = false;
 
@@ -358,8 +358,8 @@ void main() {
       group('follow-links', () {
         group('no-root-jail', () {
           testVirtualDir('absolute-link', (dir) async {
-            File('${dir.path}/file')..createSync();
-            Link('${dir.path}/file2')..createSync('${dir.path}/file');
+            File('${dir.path}/file').createSync();
+            Link('${dir.path}/file2').createSync('${dir.path}/file');
             var virDir = VirtualDirectory(dir.path);
             virDir.followLinks = true;
             virDir.jailRoot = false;
@@ -370,8 +370,8 @@ void main() {
 
           testVirtualDir('relative-parent-link', (dir) async {
             var dir2 = Directory('${dir.path}/dir')..createSync();
-            File('${dir.path}/file')..createSync();
-            Link('${dir2.path}/file')..createSync('../file');
+            File('${dir.path}/file').createSync();
+            Link('${dir2.path}/file').createSync('../file');
             var virDir = VirtualDirectory(dir2.path);
             virDir.followLinks = true;
             virDir.jailRoot = false;
@@ -387,13 +387,13 @@ void main() {
   group('last-modified', () {
     group('file', () {
       testVirtualDir('file-exists', (dir) async {
-        File('${dir.path}/file')..createSync();
+        File('${dir.path}/file').createSync();
         var virDir = VirtualDirectory(dir.path);
 
         var headers = await fetchHEaders(virDir, '/file');
         expect(headers.value(HttpHeaders.lastModifiedHeader), isNotNull);
         var lastModified =
-            HttpDate.parse(headers.value(HttpHeaders.lastModifiedHeader));
+            HttpDate.parse(headers.value(HttpHeaders.lastModifiedHeader)!);
 
         var result = await statusCodeForVirtDir(virDir, '/file',
             ifModifiedSince: lastModified);
@@ -401,13 +401,13 @@ void main() {
       });
 
       testVirtualDir('file-changes', (dir) async {
-        File('${dir.path}/file')..createSync();
+        File('${dir.path}/file').createSync();
         var virDir = VirtualDirectory(dir.path);
 
         var headers = await fetchHEaders(virDir, '/file');
         expect(headers.value(HttpHeaders.lastModifiedHeader), isNotNull);
         var lastModified =
-            HttpDate.parse(headers.value(HttpHeaders.lastModifiedHeader));
+            HttpDate.parse(headers.value(HttpHeaders.lastModifiedHeader)!);
 
         // Fake file changed by moving date back in time.
         lastModified = lastModified.subtract(const Duration(seconds: 10));
@@ -422,7 +422,7 @@ void main() {
   group('content-type', () {
     group('mime-type', () {
       testVirtualDir('from-path', (dir) async {
-        File('${dir.path}/file.jpg')..createSync();
+        File('${dir.path}/file.jpg').createSync();
         var virDir = VirtualDirectory(dir.path);
 
         var headers = await fetchHEaders(virDir, '/file.jpg');
@@ -444,7 +444,7 @@ void main() {
 
   group('range', () {
     var fileContent = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
-    VirtualDirectory virDir;
+    late VirtualDirectory virDir;
 
     void prepare(Directory dir) {
       File('${dir.path}/file').writeAsBytesSync(fileContent);
@@ -454,7 +454,7 @@ void main() {
     testVirtualDir('range', (dir) async {
       prepare(dir);
       Future<void> check(int from, int to,
-          [List<int> expected, String contentRange]) async {
+          [List<int>? expected, String? contentRange]) async {
         expected ??= fileContent.sublist(from, to + 1);
         contentRange ??= 'bytes $from-$to/${fileContent.length}';
         var result =
@@ -483,8 +483,8 @@ void main() {
     testVirtualDir('prefix-range', (dir) async {
       prepare(dir);
       Future<void> check(int from,
-          [List<int> expected,
-          String contentRange,
+          [List<int>? expected,
+          String? contentRange,
           bool expectContentRange = true,
           int expectedStatusCode = HttpStatus.partialContent]) async {
         expected ??= fileContent.sublist(from, fileContent.length);
@@ -517,7 +517,7 @@ void main() {
     testVirtualDir('suffix-range', (dir) async {
       prepare(dir);
       Future<void> check(int to,
-          [List<int> expected, String contentRange]) async {
+          [List<int>? expected, String? contentRange]) async {
         expected ??=
             fileContent.sublist(fileContent.length - to, fileContent.length);
         contentRange ??= 'bytes ${fileContent.length - to}-'
@@ -559,7 +559,7 @@ void main() {
 
     testVirtualDir('invalid-range', (dir) async {
       prepare(dir);
-      Future<void> check(int from, int to) async {
+      Future<void> check(int? from, int to) async {
         var result =
             await fetchContentAndResponse(virDir, '/file', from: from, to: to);
         var content = result[0];
@@ -621,7 +621,7 @@ void main() {
 
   group('url-decode', () {
     testVirtualDir('with-space', (dir) async {
-      File('${dir.path}/my file')..createSync();
+      File('${dir.path}/my file').createSync();
       var virDir = VirtualDirectory(dir.path);
 
       var result = await statusCodeForVirtDir(virDir, '/my file');
@@ -629,7 +629,7 @@ void main() {
     });
 
     testVirtualDir('encoded-space', (dir) async {
-      File('${dir.path}/my file')..createSync();
+      File('${dir.path}/my file').createSync();
       var virDir = VirtualDirectory(dir.path);
 
       var result = await statusCodeForVirtDir(virDir, '/my%20file');
@@ -671,7 +671,7 @@ void main() {
 
   group('serve-file', () {
     testVirtualDir('from-dir-handler', (dir) async {
-      File('${dir.path}/file')..writeAsStringSync('file contents');
+      File('${dir.path}/file').writeAsStringSync('file contents');
       var virDir = VirtualDirectory(dir.path);
       virDir.allowDirectoryListing = true;
       virDir.directoryHandler = (d, request) {
