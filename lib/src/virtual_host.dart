@@ -26,7 +26,7 @@ abstract class VirtualHost {
   /// virtualServer.addHost('static.myserver.com').listen(...);
   /// virtualServer.addHost('cache.myserver.com').listen(...);
   /// ```
-  factory VirtualHost([Stream<HttpRequest> source]) => _VirtualHost(source);
+  factory VirtualHost([Stream<HttpRequest>? source]) => _VirtualHost(source);
 
   /// Provide another source of [HttpRequest]s in the form of a [Stream].
   void addSource(Stream<HttpRequest> source);
@@ -44,23 +44,23 @@ abstract class VirtualHost {
 }
 
 class _VirtualHostDomain {
-  StreamController<HttpRequest> any;
-  StreamController<HttpRequest> exact;
+  StreamController<HttpRequest>? any;
+  StreamController<HttpRequest>? exact;
   Map<String, _VirtualHostDomain> subDomains = {};
 }
 
 class _VirtualHost implements VirtualHost {
   final _VirtualHostDomain _topDomain = _VirtualHostDomain();
-  StreamController<HttpRequest> _unhandledController;
+  StreamController<HttpRequest>? _unhandledController;
 
   @override
   Stream<HttpRequest> get unhandled {
     _unhandledController ??= StreamController<HttpRequest>();
 
-    return _unhandledController.stream;
+    return _unhandledController!.stream;
   }
 
-  _VirtualHost([Stream<HttpRequest> source]) {
+  _VirtualHost([Stream<HttpRequest>? source]) {
     if (source != null) addSource(source);
   }
 
@@ -74,20 +74,20 @@ class _VirtualHost implements VirtualHost {
       }
       var domains = host.split('.');
       var current = _topDomain;
-      StreamController any;
+      StreamController? any;
       for (var i = domains.length - 1; i >= 0; i--) {
         if (current.any != null) any = current.any;
         if (i == 0) {
           var last = current.subDomains[domains[i]];
           if (last != null && last.exact != null) {
-            last.exact.add(request);
+            last.exact!.add(request);
             return;
           }
         } else {
           if (!current.subDomains.containsKey(domains[i])) {
             break;
           }
-          current = current.subDomains[domains[i]];
+          current = current.subDomains[domains[i]]!;
         }
       }
       if (any != null) {
@@ -118,12 +118,12 @@ class _VirtualHost implements VirtualHost {
           current.subDomains[domains[i]] = _VirtualHostDomain();
         }
         if (i > 0) {
-          current = current.subDomains[domains[i]];
+          current = current.subDomains[domains[i]]!;
         } else {
-          if (current.subDomains[domains[i]].exact != null) {
+          if (current.subDomains[domains[i]]!.exact != null) {
             throw ArgumentError('Host is already provided');
           }
-          current.subDomains[domains[i]].exact = controller;
+          current.subDomains[domains[i]]!.exact = controller;
         }
       }
     }
@@ -132,7 +132,7 @@ class _VirtualHost implements VirtualHost {
 
   void _unhandled(HttpRequest request) {
     if (_unhandledController != null) {
-      _unhandledController.add(request);
+      _unhandledController!.add(request);
       return;
     }
     request.response.statusCode = HttpStatus.forbidden;

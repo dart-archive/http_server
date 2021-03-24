@@ -1,5 +1,6 @@
-# 0.9.8+4-dev
+# 1.0.0
 
+* Migrate to null safety.
 * Allow multipart form data with specified encodings that don't require
   decoding.
 

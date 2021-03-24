@@ -12,14 +12,14 @@ import 'package:test/test.dart';
 // Representation of a form field from a multipart/form-data form POST body.
 class FormField {
   // Name of the form field specified in Content-Disposition.
-  final String name;
+  final String? name;
   // Value of the form field. This is either a String or a List<int> depending
   // on the Content-Type.
   final value;
   // Content-Type of the form field.
-  final String contentType;
+  final String? contentType;
   // Filename if specified in Content-Disposition.
-  final String filename;
+  final String? filename;
 
   FormField(this.name, this.value, {this.contentType, this.filename});
 
@@ -65,7 +65,7 @@ Future _postDataTest(List<int> message, String contentType, String boundary,
   var server = await HttpServer.bind(addr, 0);
 
   server.listen((request) async {
-    var boundary = request.headers.contentType.parameters['boundary'];
+    var boundary = request.headers.contentType!.parameters['boundary']!;
     var fields = await MimeMultipartTransformer(boundary)
         .bind(request)
         .map((part) =>
@@ -75,11 +75,12 @@ Future _postDataTest(List<int> message, String contentType, String boundary,
       if (multipart.isText) {
         data = await multipart.join();
       } else {
-        data = await multipart.fold([], (b, s) => b..addAll(s));
+        data = await multipart
+            .fold<List<int>>([], (b, s) => b..addAll(s as List<int>));
       }
-      String contentType;
+      String? contentType;
       if (multipart.contentType != null) {
-        contentType = multipart.contentType.mimeType;
+        contentType = multipart.contentType!.mimeType;
       }
       return FormField(multipart.contentDisposition.parameters['name'], data,
           contentType: contentType,

@@ -8,14 +8,14 @@ class FakeHttpHeaders implements HttpHeaders {
   final Map<String, List<String>> _headers = HashMap<String, List<String>>();
 
   @override
-  List<String> operator [](key) => _headers[key];
+  List<String>? operator [](key) => _headers[key];
 
   @override
   int get contentLength =>
-      int.parse(_headers[HttpHeaders.contentLengthHeader][0]);
+      int.parse(_headers[HttpHeaders.contentLengthHeader]![0]);
 
   @override
-  DateTime get ifModifiedSince {
+  DateTime? get ifModifiedSince {
     var values = _headers[HttpHeaders.ifModifiedSinceHeader];
     if (values != null) {
       try {
@@ -28,14 +28,15 @@ class FakeHttpHeaders implements HttpHeaders {
   }
 
   @override
-  set ifModifiedSince(DateTime ifModifiedSince) {
+  set ifModifiedSince(DateTime? ifModifiedSince) {
+    ArgumentError.checkNotNull(ifModifiedSince);
     // Format "ifModifiedSince" header with date in Greenwich Mean Time (GMT).
-    var formatted = HttpDate.format(ifModifiedSince.toUtc());
+    var formatted = HttpDate.format(ifModifiedSince!.toUtc());
     _set(HttpHeaders.ifModifiedSinceHeader, formatted);
   }
 
   @override
-  ContentType contentType;
+  ContentType? contentType;
 
   @override
   void set(String name, Object value, {bool preserveHeaderCase = false}) {
@@ -48,7 +49,7 @@ class FakeHttpHeaders implements HttpHeaders {
   }
 
   @override
-  String value(String name) {
+  String? value(String name) {
     name = name.toLowerCase();
     var values = _headers[name];
     if (values == null) return null;
@@ -62,7 +63,7 @@ class FakeHttpHeaders implements HttpHeaders {
   String toString() => '$runtimeType : $_headers';
 
   // [name] must be a lower-case version of the name.
-  void _add(String name, value) {
+  void _add(String name, Object value) {
     if (name == HttpHeaders.ifModifiedSinceHeader) {
       if (value is DateTime) {
         ifModifiedSince = value;
@@ -76,10 +77,10 @@ class FakeHttpHeaders implements HttpHeaders {
     }
   }
 
-  void _addAll(String name, value) {
+  void _addAll(String name, Object value) {
     if (value is List) {
       for (var i = 0; i < value.length; i++) {
-        _add(name, value[i]);
+        _add(name, value[i] as Object);
       }
     } else {
       _add(name, value);
@@ -135,8 +136,8 @@ class FakeHttpRequest extends StreamView<Uint8List> implements HttpRequest {
 
   FakeHttpRequest(this.uri,
       {this.followRedirects = true,
-      DateTime ifModifiedSince,
-      Stream<Uint8List> data})
+      DateTime? ifModifiedSince,
+      required Stream<Uint8List> data})
       : super(data) {
     if (ifModifiedSince != null) {
       headers.ifModifiedSince = ifModifiedSince;
@@ -155,8 +156,8 @@ class FakeHttpResponse implements HttpResponse {
   final HttpHeaders headers = FakeHttpHeaders();
   final Completer _completer = Completer();
   final List<int> _buffer = <int>[];
-  String _reasonPhrase;
-  Future _doneFuture;
+  String? _reasonPhrase;
+  late final Future _doneFuture;
 
   FakeHttpResponse() {
     _doneFuture = _completer.future.whenComplete(() {
@@ -171,7 +172,7 @@ class FakeHttpResponse implements HttpResponse {
   int statusCode = HttpStatus.ok;
 
   @override
-  String get reasonPhrase => _findReasonPhrase(statusCode);
+  String get reasonPhrase => _findReasonPhrase(statusCode)!;
 
   @override
   set reasonPhrase(String value) {
@@ -193,7 +194,7 @@ class FakeHttpResponse implements HttpResponse {
   }
 
   @override
-  void addError(error, [StackTrace stackTrace]) {
+  void addError(error, [StackTrace? stackTrace]) {
     // doesn't seem to be hit...hmm...
   }
 
@@ -205,7 +206,7 @@ class FakeHttpResponse implements HttpResponse {
   }
 
   @override
-  void write(Object obj) {
+  void write(Object? obj) {
     var str = obj.toString();
     add(utf8.encode(str));
   }
@@ -224,7 +225,7 @@ class FakeHttpResponse implements HttpResponse {
 
   // Copied from SDK http_impl.dart @ 845 on 2014-01-05
   // TODO: file an SDK bug to expose this on HttpStatus in some way
-  String _findReasonPhrase(int statusCode) {
+  String? _findReasonPhrase(int statusCode) {
     if (_reasonPhrase != null) {
       return _reasonPhrase;
     }

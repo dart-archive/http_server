@@ -14,8 +14,8 @@ void main() {
   setUpAll(setupSecure);
 
   group('virtual host', () {
-    HttpServer server;
-    VirtualHost virHost;
+    late HttpServer server;
+    late VirtualHost virHost;
 
     setUp(() async {
       server = await HttpServer.bind('localhost', 0);

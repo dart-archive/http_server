@@ -6,6 +6,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:http_server/src/has_current_iterator.dart';
 import 'package:mime/mime.dart';
 import 'package:path/path.dart';
 
@@ -40,10 +41,10 @@ class VirtualDirectory {
 
   final RegExp _invalidPathRegExp = RegExp('[\\\/\x00]');
 
-  void Function(HttpRequest) _errorCallback;
-  void Function(Directory, HttpRequest) _dirCallback;
+  void Function(HttpRequest)? _errorCallback;
+  void Function(Directory, HttpRequest)? _dirCallback;
 
-  static List<String> _parsePathPrefix(String pathPrefix) {
+  static List<String> _parsePathPrefix(String? pathPrefix) {
     if (pathPrefix == null) return <String>[];
     return Uri(path: pathPrefix)
         .pathSegments
@@ -62,7 +63,7 @@ class VirtualDirectory {
   /// be trimmed from the requests uri, before locating the actual resource.
   /// If the requests uri doesn't start with [pathPrefix], a 404 response is
   /// generated.
-  VirtualDirectory(this.root, {String pathPrefix})
+  VirtualDirectory(this.root, {String? pathPrefix})
       : _pathPrefixSegments = _parsePathPrefix(pathPrefix);
 
   /// Serve a [Stream] of [HttpRequest]s, in this [VirtualDirectory].
@@ -71,14 +72,17 @@ class VirtualDirectory {
 
   /// Serve a single [HttpRequest], in this [VirtualDirectory].
   Future serveRequest(HttpRequest request) async {
-    var iterator = request.uri.pathSegments.iterator;
+    var iterator = HasCurrentIterator(request.uri.pathSegments.iterator);
+    iterator.moveNext();
     for (var segment in _pathPrefixSegments) {
-      if (!iterator.moveNext() || iterator.current != segment) {
+      if (!iterator.hasCurrent || iterator.current != segment) {
         _serveErrorPage(HttpStatus.notFound, request);
         return request.response.done;
       }
+      iterator.moveNext();
     }
-    var entity = await _locateResource('.', iterator..moveNext());
+
+    var entity = await _locateResource('.', iterator);
     if (entity is File) {
       serveFile(entity, request);
     } else if (entity is Directory) {
@@ -114,9 +118,12 @@ class VirtualDirectory {
     _errorCallback = callback;
   }
 
-  Future _locateResource(String path, Iterator<String> segments) async {
+  Future<Object?> _locateResource(
+      String path, HasCurrentIterator<String> segments) async {
     // Don't allow navigating up paths.
-    if (segments.current == '..') return Future.value(null);
+    if (segments.hasCurrent && segments.current == '..') {
+      return Future.value(null);
+    }
     path = normalize(path);
     // If we jail to root, the relative path can never go up.
     if (jailRoot && split(path).first == '..') return Future.value(null);
@@ -124,18 +131,18 @@ class VirtualDirectory {
     var type = await FileSystemEntity.type(fullPath(), followLinks: false);
     switch (type) {
       case FileSystemEntityType.file:
-        if (segments.current == null) {
+        if (!segments.hasCurrent) {
           return File(fullPath());
         }
         break;
 
       case FileSystemEntityType.directory:
         String dirFullPath() => '${fullPath()}$separator';
-        var current = segments.current;
-        if (current == null) {
+        if (!segments.hasCurrent) {
           if (path == '.') return Directory(dirFullPath());
           return const _DirectoryRedirect();
         }
+        var current = segments.current;
         var hasNext = segments.moveNext();
         if (!hasNext && current == '') {
           return Directory(dirFullPath());
@@ -143,7 +150,6 @@ class VirtualDirectory {
           if (_invalidPathRegExp.hasMatch(current)) break;
           return _locateResource(join(path, current), segments);
         }
-        break;
 
       case FileSystemEntityType.link:
         if (followLinks) {
@@ -181,7 +187,7 @@ class VirtualDirectory {
     try {
       var lastModified = await file.lastModified();
       if (request.headers.ifModifiedSince != null &&
-          !lastModified.isAfter(request.headers.ifModifiedSince)) {
+          !lastModified.isAfter(request.headers.ifModifiedSince!)) {
         response.statusCode = HttpStatus.notModified;
         await response.close();
         return null;
@@ -197,17 +203,17 @@ class VirtualDirectory {
         var matches = RegExp(r'^bytes=(\d*)\-(\d*)$').firstMatch(range);
         // If the range header have the right format, handle it.
         if (matches != null &&
-            (matches[1].isNotEmpty || matches[2].isNotEmpty)) {
+            (matches[1]!.isNotEmpty || matches[2]!.isNotEmpty)) {
           // Serve sub-range.
           int start; // First byte position - inclusive.
           int end; // Last byte position - inclusive.
-          if (matches[1].isEmpty) {
-            start = length - int.parse(matches[2]);
+          if (matches[1]!.isEmpty) {
+            start = length - int.parse(matches[2]!);
             if (start < 0) start = 0;
             end = length - 1;
           } else {
-            start = int.parse(matches[1]);
-            end = matches[2].isEmpty ? length - 1 : int.parse(matches[2]);
+            start = int.parse(matches[1]!);
+            end = matches[2]!.isEmpty ? length - 1 : int.parse(matches[2]!);
           }
           // If the range is syntactically invalid the Range header
           // MUST be ignored (RFC 2616 section 14.35.1).
@@ -271,14 +277,14 @@ class VirtualDirectory {
 
   void _serveDirectory(Directory dir, HttpRequest request) async {
     if (_dirCallback != null) {
-      _dirCallback(dir, request);
+      _dirCallback!(dir, request);
       return;
     }
     var response = request.response;
     try {
       var stats = await dir.stat();
       if (request.headers.ifModifiedSince != null &&
-          !stats.modified.isAfter(request.headers.ifModifiedSince)) {
+          !stats.modified.isAfter(request.headers.ifModifiedSince!)) {
         response.statusCode = HttpStatus.notModified;
         await response.close();
         return;
@@ -315,7 +321,7 @@ $server
 
       response.write(header);
 
-      void add(String name, String modified, var size, bool folder) {
+      void add(String name, String? modified, var size, bool folder) {
         size ??= '-';
         modified ??= '';
         var encodedSize = const HtmlEscape().convert(size.toString());
@@ -364,7 +370,7 @@ $server
     var response = request.response;
     response.statusCode = error;
     if (_errorCallback != null) {
-      _errorCallback(request);
+      _errorCallback!(request);
       return;
     }
     response.headers.contentType =
@@ -396,7 +402,7 @@ $server
 class _VirtualDirectoryFileStream extends StreamConsumer<List<int>> {
   final HttpResponse response;
   final String path;
-  List<int> buffer = [];
+  List<int>? buffer = [];
 
   _VirtualDirectoryFileStream(this.response, this.path);
 
@@ -407,29 +413,29 @@ class _VirtualDirectoryFileStream extends StreamConsumer<List<int>> {
         response.add(data);
         return;
       }
-      if (buffer.isEmpty) {
+      if (buffer!.isEmpty) {
         if (data.length >= defaultMagicNumbersMaxLength) {
           setMimeType(data);
           response.add(data);
           buffer = null;
         } else {
-          buffer.addAll(data);
+          buffer!.addAll(data);
         }
       } else {
-        buffer.addAll(data);
-        if (buffer.length >= defaultMagicNumbersMaxLength) {
+        buffer!.addAll(data);
+        if (buffer!.length >= defaultMagicNumbersMaxLength) {
           setMimeType(buffer);
-          response.add(buffer);
+          response.add(buffer!);
           buffer = null;
         }
       }
     }, onDone: () {
       if (buffer != null) {
-        if (buffer.isEmpty) {
+        if (buffer!.isEmpty) {
           setMimeType(null);
         } else {
           setMimeType(buffer);
-          response.add(buffer);
+          response.add(buffer!);
         }
       }
       response.close();
@@ -440,7 +446,7 @@ class _VirtualDirectoryFileStream extends StreamConsumer<List<int>> {
   @override
   Future close() => Future.value();
 
-  void setMimeType(List<int> bytes) {
+  void setMimeType(List<int>? bytes) {
     var mimeType = lookupMimeType(path, headerBytes: bytes);
     if (mimeType != null) {
       response.headers.contentType = ContentType.parse(mimeType);
